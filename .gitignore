@@ -67,3 +67,6 @@ docs/_build/
 .venv
 env/
 env.bak/
+
+#MAC OS
+.DS_Store
