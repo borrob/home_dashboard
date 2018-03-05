@@ -1,8 +1,16 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-# Create your views here.
+@login_required
 def index(request):
     """
     Generate the dashboard index-file.
     """
-    return render(request, 'dashboard/index.html', {})
+    return profile(request)
+
+@login_required
+def profile(request):
+    """
+    Show the user profile.
+    """
+    return render(request, 'dashboard/profile.html', {})

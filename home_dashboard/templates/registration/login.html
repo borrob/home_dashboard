@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block main %}
+
+    <main role="main" class="container">
+
+
+      <div class="jumbotron">
+        <h1>Welcome to home dasboard</h1>
+        <p class="lead">Giving you an overview on what's going on.</p>
+      </div>
+
+      <div class="jumbotron">
+
+		{% if form.errors %}
+			<div class="alert alert-danger" roler="alert">
+				<p>Your username and password didn't match. Please try again.</p>
+			</div>
+		{% endif %}
+		{% if next %}
+			<div class="alert alert-danger" roler="alert">
+				{% if user.is_authenticated %}
+					<p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
+				{% else %}
+					<p>Please login to see this page.</p>
+				{% endif %}
+			</div>
+		{% endif %}
+
+        <h2>Please login</h2>
+		<form action="{% url 'login' %}" method='POST'>
+			{% csrf_token %}
+			<div class="form-group">
+				<label for='usernameInput' class='form-control'>Username:</label>
+				<input type='text' class='form-control' id='usernameInput' name='username' placeholder='username' required autofocus maxlength='254'/>
+			</div>
+			<div class="form-group">
+				<label for='passwordInput' class='form-control'>Password:</label>
+				<input type='password' class='form-control' id='passwordInput' name='password' required/>
+			</div>
+			<input type="submit" class="btn btn-primary" value="login" />
+			<input type="hidden" name="next" value="{{ next }}" />
+		</form>
+      </div>
+
+    </main>
+
+{% endblock %}

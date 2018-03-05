@@ -1,4 +1,4 @@
-{% extends 'dashboard/base.html' %}
+{% extends 'base.html' %}
 
 {% block main %}
 
@@ -9,10 +9,9 @@
         <p class="lead">Giving you an overview on what's going on.</p>
       </div>
 
-      <div class="container">
-        <p>Login?</p>
-      </div>
-
-    </main>
-
+      <div class="jumbotron">
+		<h2>Logout</h2>
+		<p>You are logged out.</p><a href="{% url 'login'%}">Click here to login again.</a>
+	</div>
+</main>
 {% endblock %}
