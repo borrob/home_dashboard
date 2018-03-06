@@ -6,6 +6,6 @@ from django.shortcuts import render
 from .models import Meter
 
 # Create your views here.
-class ListMeters(generic.ListView):
+class ListMeters(LoginRequiredMixin, generic.ListView):
     model = Meter
     template = 'utilities/meter_list.html'
