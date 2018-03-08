@@ -40,3 +40,32 @@ def add_meter(request):
     newMeter.save()
     messages.add_message(request, messages.INFO, 'Meter {0} is added.'.format(newMeter.meter_name), 'alert-success')
     return redirect(reverse('utilities:meter_list'))
+
+@permission_required('utilities.delete_meter')
+def delete_meter(request):
+    """
+    Delete a meter
+    """
+    try:
+        meterName = request.POST.get('meter_name')
+    except KeyError:
+        messages.add_message(request, messages.ERROR, 'Missing key element to delete meter.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+
+    if(meterName == None):
+        messages.add_message(request, messages.ERROR, 'Missing key element to delete meter.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+
+    deleted = 0
+    try:
+        (deleted, deletedMeter) = Meter.objects.get(meter_name=meterName).delete()
+    except Meter.DoesNotExist:
+        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted meter.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+    finally:
+        if (deleted>=1):
+            messages.add_message(request, messages.INFO, 'Meter {0} is deleted'.format(meterName), 'alert-success')
+            return redirect(reverse('utilities:meter_list'))
+        else:
+            messages.add_message(request, messages.ERROR, 'Cannot delete already deleted meter.', 'alert-danger')
+            return redirect(reverse('utilities:meter_list'))

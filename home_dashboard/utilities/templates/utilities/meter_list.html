@@ -30,6 +30,9 @@
 		{% if perms.utilities.add_meter %}
 			{% include 'utilities/snippets/add_meter_modal.html' %}
 		{% endif %}
+		{% if perms.utilities.delete_meter %}
+			{% include 'utilities/snippets/delete_meter_modal.html' %}
+		{% endif %}
 
     </main>
 
