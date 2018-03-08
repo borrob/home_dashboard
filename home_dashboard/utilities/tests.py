@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -27,5 +27,27 @@ class MeterViewTests(TestCase):
         """
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.get(reverse('utilities:meter_list'))
+        print(response)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No meters yet")
+
+    def test_add_meter(self):
+        """
+        Test if anyone can add a meter (should be no).
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'test', 'unit_name': 'm'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "please login")
+
+    def test_add_meter_with_permission(self):
+        """
+        Test if someone with permission can add a meter (should be yes).
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p.id)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "No meters yet")
+        self.assertContains(response, 'testmeter')

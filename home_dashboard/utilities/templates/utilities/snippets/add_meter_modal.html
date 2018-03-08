@@ -1,0 +1,39 @@
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newMeterModal">
+  Add new Meter
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="newMeterModal" tabindex="-1" role="dialog" aria-labelledby="newMeterModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newMeerModalLabel">Add meter</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+	  <form action="{% url 'utilities:add_meter' %}" method='post'>
+	  {% csrf_token %}
+      <div class="modal-body">
+		<div class="form-group row">
+			<label for="meterNameInput" class="col-sm-3 col-form-label">Meter name</label>
+			<div class='col-sm-9'>
+				<input type='text' id='meterNameInput' class="form-control" name='meter_name' placeholder='meter name'/>
+			</div>
+		</div>
+		<div class="form-group row">
+			<label for="meterUnitInput" class="col-sm-3 col-form-label">Meter unit</label>
+			<div class='col-sm-9'>
+				<input type='text' id='meterUnitInput' class="form-control" name='unit_name' placeholder='unit'/>
+			</div>
+		</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+	  </form>
+    </div>
+  </div>
+</div>

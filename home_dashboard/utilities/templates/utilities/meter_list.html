@@ -13,15 +13,23 @@
 				</thead>
 				<tbody>
 					{% for m in object_list %}
-					<td>{{ loop.index }}</td>
-					<td>{{ m.meter_name }}</td>
-					<td>{{ m.meter_unit }}</td>
+                    <tr>
+					    <td>{{ m.pk }}.</td>
+					    <td>{{ m.meter_name }}</td>
+					    <td>{{ m.meter_unit }}</td>
+                    </tr>
 					{% empty %}
-					<td colspan=3>No meters yet</td>
+                    <tr>
+					    <td colspan=3>No meters yet</td>
 					{% endfor %}
+                    </tr>
 				</tbody>
 			</table>
 		</div>
+
+		{% if perms.utilities.add_meter %}
+			{% include 'utilities/snippets/add_meter_modal.html' %}
+		{% endif %}
 
     </main>
 
