@@ -69,3 +69,43 @@ def delete_meter(request):
         else:
             messages.add_message(request, messages.ERROR, 'Cannot delete already deleted meter.', 'alert-danger')
             return redirect(reverse('utilities:meter_list'))
+
+@permission_required('utilities.change_meter')
+def edit_meter(request):
+    """
+    Edit a meter.
+    """
+    try:
+        meterName = request.POST.get('meter_name')
+        newName = request.POST.get('new_name')
+        meterUnit = request.POST.get('unit_name')
+    except KeyError:
+        messages.add_message(request, messages.ERROR, 'Missing key element to change a meter.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+
+    if(meterName == None or meterUnit == None):
+        messages.add_message(request, messages.ERROR, 'Missing key element to change a meter.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+
+    try:
+        theMeter = Meter.objects.get(meter_name=meterName)
+    except Meter.DoesNotExist:
+        messages.add_message(request, messages.ERROR, 'Cannot change a meter that doesn\'t exist yet.', 'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+
+    try:
+        m = Meter.objects.get(meter_name=newName)
+    except Meter.DoesNotExist:
+        #new name isn't taken -> OK!
+        pass
+    else:
+        if(m.pk != theMeter.pk):
+            #just changing the unit name
+            messages.add_message(request, messages.ERROR, 'Name is already taken', 'alert-danger')
+            return redirect(reverse('utilities:meter_list'))
+
+    theMeter.meter_name = newName
+    theMeter.unit_name = meterUnit
+    theMeter.save()
+    messages.add_message(request, messages.INFO, 'Meter {0} is changed.'.format(theMeter.meter_name), 'alert-success')
+    return redirect(reverse('utilities:meter_list'))

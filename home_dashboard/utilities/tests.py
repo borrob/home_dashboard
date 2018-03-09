@@ -65,7 +65,7 @@ class MeterViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
-    def test_remove_meteri_with_permission(self):
+    def test_remove_meter_with_permission(self):
         """
         Test if someone with permission can delete a meter (yes)
         """
@@ -79,3 +79,46 @@ class MeterViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No meters yet")
         self.assertContains(response, "testmeter is deleted")
+
+    def test_change_meter(self):
+        """
+        Test if anyone can change a mter (No!)
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'thenewmeter'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "please login")
+
+    def test_edit_meter_with_permission(self):
+        """
+        Test if someone with permission can change a meter (yes)
+        """
+        p = Permission.objects.get(name='Can add meter')
+        p2 = Permission.objects.get(name='Can change meter')
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'thenewmeter'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "thenewmeter")
+        self.assertContains(response, "thenewmeter is changed")
+
+    def test_edit_meter_with_permission_to_name_already_taken(self):
+        """
+        Test if someone with permission can change a meter (yes)
+        """
+        p = Permission.objects.get(name='Can add meter')
+        p2 = Permission.objects.get(name='Can change meter')
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
+        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'nametaken', 'unit_name': 'm'}, follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'nametaken'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "testmeter")
+        self.assertContains(response, "Name is already taken")

@@ -1,0 +1,44 @@
+<!-- Modal -->
+<div class="modal fade" id="editMeterModal" tabindex="-1" role="dialog" aria-labelledby="editMeterModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editMeterModalLabel">Change meter</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+	  <form action="{% url 'utilities:edit_meter' %}" method='post'>
+	  {% csrf_token %}
+      <div class="modal-body">
+        <input type="hidden" name="meter_name" id="editoldMeterName" />
+		<div class="form-group row">
+			<label for="editmeterNameInput" class="col-sm-3 col-form-label">Meter name</label>
+			<div class='col-sm-9'>
+				<input type='text' id='editmeterNameInput' class="form-control" name='new_name'/>
+			</div>
+		</div>
+		<div class="form-group row">
+			<label for="editmeterUnitInput" class="col-sm-3 col-form-label">Meter unit</label>
+			<div class='col-sm-9'>
+				<input type='text' id='editmeterUnitInput' class="form-control" name='unit_name'/>
+			</div>
+		</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+	  </form>
+    </div>
+  </div>
+</div>
+
+<script>
+var editmeter = function(name, unitname){
+  $('#editoldMeterName').val(name);
+  $('#editmeterNameInput').val(name);
+  $('#editmeterUnitInput').val(unitname);
+  $('#editMeterModal').modal();
+};
+</script>
