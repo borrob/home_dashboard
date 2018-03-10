@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
-from .models import Meter
+from .models import Meter, Reading
 
 # Create your views here.
 class ListMeters(LoginRequiredMixin, generic.ListView):
@@ -109,3 +109,7 @@ def edit_meter(request):
     theMeter.save()
     messages.add_message(request, messages.INFO, 'Meter {0} is changed.'.format(theMeter.meter_name), 'alert-success')
     return redirect(reverse('utilities:meter_list'))
+
+class ListReadings(LoginRequiredMixin, generic.ListView):
+    model = Reading
+    template = 'utilities/reading_list.html'

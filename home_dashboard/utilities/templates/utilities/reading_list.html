@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block main %}
+
+    <main role="main" class="container">
+
+		<div class="card">
+			<table class="table table-hover">
+				<thead>
+					<th></th>
+                    <th>Date</th>
+					<th>Meter name</th>
+                    <th>Reading</th>
+					<th>Unit</th>
+				</thead>
+				<tbody>
+					{% for r in object_list %}
+          <tr>
+					    <td>{{ r.pk }}.</td>
+                        <td>{{ r.date }}</td>
+					    <td>{{ r.meter.meter_name }}</td>
+                        <td>{{ r.reading }}</td>
+					    <td>{{ r.meter.meter_unit }}</td>
+          </tr>
+					{% empty %}
+                    <tr>
+					    <td colspan=4>No readings yet</td>
+					{% endfor %}
+                    </tr>
+				</tbody>
+			</table>
+		</div>
+
+    </main>
+
+{% endblock %}
