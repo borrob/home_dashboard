@@ -15,4 +15,4 @@ class Reading(models.Model):
     remark = models.CharField(max_length=255)
 
     def __str__(self):
-        return('Reading: {0} {1} ({2} - {3}'.format(self.reading, self.meter.meter_unit, self.date, self.meter.meter_name))
+        return('Reading: {d} {m} - {r} {u}'.format(r=self.reading, u=self.meter.meter_unit, d=self.date, m=self.meter.meter_name))

@@ -122,3 +122,55 @@ class MeterViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
         self.assertContains(response, "Name is already taken")
+
+class ReadingViewTests(TestCase):
+
+    def setUp(self):
+        """
+        Setup a test user for login.
+        """
+        self.client = Client()
+        self.user = User.objects.create_user('testuser', 'test@user.com', 'q2w3E$R%')
+
+    def test_need_login_for_readinglist(self):
+        """
+        Trying to see the list without login should redirect to login page.
+        """
+        response = self.client.get(reverse('utilities:reading_list'), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "login")
+
+    def test_no_readings(self):
+        """
+        Test the response if there are no readings present
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:reading_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No readings yet")
+
+    def test_add_reading(self):
+        """
+        Test if anyone can add a reading (should be no).
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        m = Meter.objects.create(meter_name='testmeter', unit_name='test')
+        m.save()
+        resonse = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "please login")
+
+    def test_add_reading_with_permission(self):
+        """
+        Test if someone with permission can add a reading (should be yes).
+        """
+        p = Permission.objects.get(name='Can add reading')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        m = Meter.objects.create(meter_name='testmeter', unit_name='test')
+        m.save()
+        resonse = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "No reading yet")
+        self.assertContains(response, '5')
+

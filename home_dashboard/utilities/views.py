@@ -1,3 +1,5 @@
+from decimal import *
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -110,6 +112,57 @@ def edit_meter(request):
     messages.add_message(request, messages.INFO, 'Meter {0} is changed.'.format(theMeter.meter_name), 'alert-success')
     return redirect(reverse('utilities:meter_list'))
 
-class ListReadings(LoginRequiredMixin, generic.ListView):
-    model = Reading
-    template = 'utilities/reading_list.html'
+@login_required
+def list_readings(request):
+    """
+    Show all the readings.
+    TODO: add paging.
+    """
+    try:
+        readings = Reading.objects.all()
+    except DoesNotExist:
+        pass
+
+    meters = Meter.objects.all()
+    return render(request, 'utilities/reading_list.html', {'object_list': readings, 'meters': meters})
+
+@permission_required('utilities.add_reading')
+def add_reading(request):
+    """
+    Add a reading.
+    """
+    try:
+        meter = int(request.POST.get('meter_id'))
+        reading_date = request.POST.get('reading_date')
+        reading_number = Decimal(request.POST.get('reading'))
+        remark = request.POST.get('remark')
+    except KeyError:
+        messages.add_message(request, messages.ERROR, 'Missing key element to add a new reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    if(meter == None or reading_date == None or reading_number == None):
+        messages.add_message(request, messages.ERROR, 'Missing key element to add a new reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    try:
+        meter = Meter.objects.get(pk=meter)
+    except Meter.DoesNotExist:
+        messages.add_message(request, messages.ERROR, 'Unknown meter', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+    else:
+        r = Reading.objects.create(
+                meter = meter,
+                reading = reading_number,
+                date = reading_date,
+                remark = remark)
+        r.save()
+    messages.add_message(request, messages.INFO, '{0} is added.'.format(r), 'alert-success')
+    return redirect(reverse('utilities:reading_list'))
+
+@permission_required('utilities.delete_reading')
+def delete_reading(request):
+    pass
+
+@permission_required('utilities.edit_reading')
+def edit_reading(request):
+    pass
