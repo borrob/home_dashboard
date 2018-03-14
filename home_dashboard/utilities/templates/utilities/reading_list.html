@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block main %}
 
@@ -12,6 +13,7 @@
 					<th>Meter name</th>
                     <th>Reading</th>
 					<th>Unit</th>
+                    <th></th>
 				</thead>
 				<tbody>
 					{% for r in object_list %}
@@ -21,6 +23,11 @@
 					    <td>{{ r.meter.meter_name }}</td>
                         <td>{{ r.reading }}</td>
 					    <td>{{ r.meter.meter_unit }}</td>
+                        {% if perms.utilities.delete_reading %}
+                          <td><a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"</a></td>
+                        {% else %}
+                          <td></td>
+                        {% endif %}
           </tr>
 					{% empty %}
                     <tr>
@@ -32,6 +39,7 @@
 		</div>
 
         {% include 'utilities/snippets/add_reading_model.html' %}
+        {% include 'utilities/snippets/delete_reading_modal.html' %}
 
     </main>
 

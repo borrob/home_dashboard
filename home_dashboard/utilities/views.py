@@ -136,7 +136,7 @@ def add_reading(request):
         reading_date = request.POST.get('reading_date')
         reading_number = Decimal(request.POST.get('reading'))
         remark = request.POST.get('remark')
-    except KeyError:
+    except (KeyError, TypeError):
         messages.add_message(request, messages.ERROR, 'Missing key element to add a new reading.', 'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
@@ -161,7 +161,31 @@ def add_reading(request):
 
 @permission_required('utilities.delete_reading')
 def delete_reading(request):
-    pass
+    """
+    Delete a meter reading.
+    """
+    try:
+        reading_id = int(request.POST.get('reading_id'))
+    except KeyError:
+        messages.add_message(request, messages.ERROR, 'Missing key element to delete reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    if(reading_id == None):
+        messages.add_message(request, messages.ERROR, 'Missing key element to delete reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    deleted = 0
+    try:
+        (deleted, deletedReading) = Reading.objects.get(pk=reading_id).delete()
+    except Reading.DoesNotExist:
+        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+    if (deleted>=1):
+        messages.add_message(request, messages.INFO, 'Reading is deleted', 'alert-success')
+        return redirect(reverse('utilities:reading_list'))
+    else:
+        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
 
 @permission_required('utilities.edit_reading')
 def edit_reading(request):

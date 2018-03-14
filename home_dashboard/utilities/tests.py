@@ -2,7 +2,7 @@ from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .models import Meter
+from .models import Meter, Reading
 
 # Create your tests here.
 
@@ -154,9 +154,9 @@ class ReadingViewTests(TestCase):
         Test if anyone can add a reading (should be no).
         """
         self.client.login(username='testuser', password='q2w3E$R%')
-        m = Meter.objects.create(meter_name='testmeter', unit_name='test')
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        resonse = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -167,10 +167,40 @@ class ReadingViewTests(TestCase):
         p = Permission.objects.get(name='Can add reading')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        m = Meter.objects.create(meter_name='testmeter', unit_name='test')
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        resonse = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No reading yet")
         self.assertContains(response, '5')
 
+    def test_remove_reading(self):
+        """
+        Test if anyone can delete a reading (no!)
+        """
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
+        m.save()
+        r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
+        r.save()
+
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:delete_reading'), data={'reading_id': r.id}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "please login")
+
+    def test_remove_reading_with_permission(self):
+        """
+        Test if anyone with permission can delete a reading (yes)
+        """
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
+        m.save()
+        r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
+        r.save()
+        p = Permission.objects.get(name='Can delete reading')
+        self.user.user_permissions.add(p)
+
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:delete_reading'), data={'reading_id': r.id}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No readings yet")
+        self.assertContains(response, "is deleted")
