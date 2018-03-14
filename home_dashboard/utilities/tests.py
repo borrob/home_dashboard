@@ -204,3 +204,34 @@ class ReadingViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No readings yet")
         self.assertContains(response, "is deleted")
+
+    def test_change_reading(self):
+        """
+        Test if anyone can change a reading (should be no).
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
+        m.save()
+        r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
+        r.save()
+
+        response = self.client.post(reverse('utilities:edit_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "please login")
+
+    def test_change_reading_with_permission(self):
+        """
+        Test if someone with permission can change a reading (should be yes).
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
+        m.save()
+        r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
+        r.save()
+        p = Permission.objects.get(name='Can delete reading')
+        self.user.user_permissions.add(p)
+
+        response = self.client.post(reverse('utilities:edit_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "5")
+        self.assertNotContains(response, "99")

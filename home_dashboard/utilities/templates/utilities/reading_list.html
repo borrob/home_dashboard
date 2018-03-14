@@ -23,11 +23,14 @@
 					    <td>{{ r.meter.meter_name }}</td>
                         <td>{{ r.reading }}</td>
 					    <td>{{ r.meter.meter_unit }}</td>
-                        {% if perms.utilities.delete_reading %}
-                          <td><a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"</a></td>
-                        {% else %}
-                          <td></td>
-                        {% endif %}
+                        <td>
+                            {% if perms.utilities.delete_reading %}
+                              <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"</a>
+                            {% endif %}
+                            {% if perms.utilities.edit_reading %}
+                              <a onclick="edit_reading({{ r.pk }}, {{r.meter_id}}, '{{r.date | date:"Y-m-d"}}', {{r.reading}}, '{{r.remark}}')"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"</a>
+                            {% endif %}
+                        </td>
           </tr>
 					{% empty %}
                     <tr>
@@ -40,6 +43,7 @@
 
         {% include 'utilities/snippets/add_reading_model.html' %}
         {% include 'utilities/snippets/delete_reading_modal.html' %}
+        {% include 'utilities/snippets/edit_reading_modal.html' %}
 
     </main>
 

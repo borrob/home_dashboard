@@ -189,4 +189,35 @@ def delete_reading(request):
 
 @permission_required('utilities.edit_reading')
 def edit_reading(request):
-    pass
+    """
+    Edit a reading.
+    """
+    try:
+        reading = int(request.POST.get('reading_id'))
+        meter = int(request.POST.get('meter_id'))
+        reading_date = request.POST.get('reading_date')
+        reading_number = Decimal(request.POST.get('reading'))
+        remark = request.POST.get('remark')
+    except (KeyError, TypeError):
+        messages.add_message(request, messages.ERROR, 'Missing key element to change the reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    if(meter == None or reading_date == None or reading_number == None):
+        messages.add_message(request, messages.ERROR, 'Missing key element to change the reading.', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    try:
+        meter = Meter.objects.get(pk=meter)
+    except Meter.DoesNotExist:
+        messages.add_message(request, messages.ERROR, 'Unknown meter', 'alert-danger')
+        return redirect(reverse('utilities:reading_list'))
+
+    r = Reading.objects.get(pk=reading)
+    r.meter = meter
+    r.reading = reading_number
+    r.date = reading_date
+    r.remark = remark
+    r.save()
+
+    messages.add_message(request, messages.INFO, '{0} is changed.'.format(r), 'alert-success')
+    return redirect(reverse('utilities:reading_list'))
