@@ -3,10 +3,19 @@
 
     <ul class="navbar-nav mr-auto">
       <li class="nav-item active">
-        {# TODO: add functionality for more sites #}
         <a class="nav-link" href="{% url 'dashboard:index' %}">Home <span class="sr-only">(current)</span></a>
       </li>
 	  {% if user.is_authenticated %}
+      {# show utilities menu #}
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbar_util_dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Utilities</a>
+        <div class="dropdown-menu" aria-labelledby="navbar_util_dropdown">
+            <a class="dropdown-item" href="{% url 'utilities:meter_list' %}">Meter list</a>
+            <a class="dropdown-item" href="{% url 'utilities:reading_list' %}">Meter readings</a>
+        </div>
+      </li>
+
+      {# show logout #}
 	  <li class="nav-item">
         <a class="nav-link" href="{% url 'logout' %}">Logout {{ user.username }}<span class="sr-only">(current)</span></a>
 	  </li>
