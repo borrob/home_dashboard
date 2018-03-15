@@ -1,3 +1,6 @@
+"""
+Testing of all the classes and endpoints for the utilities app.
+"""
 from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -7,6 +10,14 @@ from .models import Meter, Reading
 # Create your tests here.
 
 class MeterViewTests(TestCase):
+    """
+    Test the functionality of the Meter endpoint.
+
+    Adds, deletes and edits the meters class and checks if the user has the
+    right permissions.
+    """
+
+    # pylint: disable=invalid-name
 
     def setUp(self):
         """
@@ -37,7 +48,10 @@ class MeterViewTests(TestCase):
         Test if anyone can add a meter (should be no).
         """
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'test', 'unit_name': 'm'}, follow=True)
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'test',
+                                          'unit_name': 'm'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -48,7 +62,10 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
         self.assertContains(response, 'testmeter')
@@ -60,8 +77,13 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
-        response = self.client.post(reverse('utilities:delete_meter'), data={'meter_name': 'testmeter'}, follow=True)
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        response = self.client.post(reverse('utilities:delete_meter'),
+                                    data={'meter_name': 'testmeter'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -74,8 +96,13 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
-        response = self.client.post(reverse('utilities:delete_meter'), data={'meter_name': 'testmeter'}, follow=True)
+        self.client.post(reverse('utilities:add_meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        response = self.client.post(reverse('utilities:delete_meter'),
+                                    data={'meter_name': 'testmeter'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No meters yet")
         self.assertContains(response, "testmeter is deleted")
@@ -87,8 +114,15 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'thenewmeter'}, follow=True)
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 's',
+                                          'new_name': 'thenewmeter'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -101,8 +135,15 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'thenewmeter'}, follow=True)
+        self.client.post(reverse('utilities:add_meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 's',
+                                          'new_name': 'thenewmeter'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "thenewmeter")
         self.assertContains(response, "thenewmeter is changed")
@@ -116,14 +157,32 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'testmeter', 'unit_name': 'm'}, follow=True)
-        self.client.post(reverse('utilities:add_meter'), data={'meter_name': 'nametaken', 'unit_name': 'm'}, follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'), data={'meter_name': 'testmeter', 'unit_name': 's', 'new_name': 'nametaken'}, follow=True)
+        self.client.post(reverse('utilities:add_meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        self.client.post(reverse('utilities:add_meter'),
+                         data={'meter_name': 'nametaken',
+                               'unit_name': 'm'},
+                         follow=True)
+        response = self.client.post(reverse('utilities:edit_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 's',
+                                          'new_name': 'nametaken'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
         self.assertContains(response, "Name is already taken")
 
 class ReadingViewTests(TestCase):
+    """
+    Test the functionality of the Reading endpoint.
+
+    Adds, deletes and edits the readings class and checks if the user has the
+    right permissions.
+    """
+
+    # pylint: disable=invalid-name
 
     def setUp(self):
         """
@@ -156,7 +215,12 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:add_reading'),
+                                    data={'date': '2018-04-04',
+                                          'reading': 5,
+                                          'meter': m.id,
+                                          'remark': 'test'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -169,7 +233,12 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:add_reading'),
+                                    data={'date': '2018-04-04',
+                                          'reading': 5,
+                                          'meter': m.id,
+                                          'remark': 'test'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No reading yet")
         self.assertContains(response, '5')
@@ -184,7 +253,9 @@ class ReadingViewTests(TestCase):
         r.save()
 
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:delete_reading'), data={'reading_id': r.id}, follow=True)
+        response = self.client.post(reverse('utilities:delete_reading'),
+                                    data={'reading_id': r.id},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -200,7 +271,9 @@ class ReadingViewTests(TestCase):
         self.user.user_permissions.add(p)
 
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:delete_reading'), data={'reading_id': r.id}, follow=True)
+        response = self.client.post(reverse('utilities:delete_reading'),
+                                    data={'reading_id': r.id},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No readings yet")
         self.assertContains(response, "is deleted")
@@ -215,7 +288,12 @@ class ReadingViewTests(TestCase):
         r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
         r.save()
 
-        response = self.client.post(reverse('utilities:edit_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:edit_reading'),
+                                    data={'date': '2018-04-04',
+                                          'reading': 5,
+                                          'meter': m.id,
+                                          'remark': 'test'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
 
@@ -231,7 +309,12 @@ class ReadingViewTests(TestCase):
         p = Permission.objects.get(name='Can delete reading')
         self.user.user_permissions.add(p)
 
-        response = self.client.post(reverse('utilities:edit_reading'), data={'date': '2018-04-04', 'reading': 5, 'meter': m.id, 'remark': 'test'}, follow=True)
+        response = self.client.post(reverse('utilities:edit_reading'),
+                                    data={'date': '2018-04-04',
+                                          'reading': 5,
+                                          'meter': m.id,
+                                          'remark': 'test'},
+                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")

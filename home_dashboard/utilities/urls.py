@@ -1,3 +1,6 @@
+"""
+Maps the utilities URLs to the python functions.
+"""
 from django.urls import path
 
 from . import views

@@ -1,4 +1,8 @@
-from decimal import *
+"""
+Defining the utilities URL links and their respones.
+"""
+
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -9,7 +13,14 @@ from django.shortcuts import render, redirect, reverse
 from .models import Meter, Reading
 
 # Create your views here.
-class ListMeters(LoginRequiredMixin, generic.ListView):
+class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
+    """
+    Show a list of all the meters.
+
+    TODO: add paging
+    TODO: add selecting of specific meter
+    TODO: add selection of specific year/month
+    """
     model = Meter
     template = 'utilities/meter_list.html'
 
@@ -19,28 +30,40 @@ def add_meter(request):
     Add a meter.
     """
     try:
-        meterName = request.POST.get('meter_name')
-        meterUnit = request.POST.get('unit_name')
+        meter_name = request.POST.get('meter_name')
+        meter_unit = request.POST.get('unit_name')
     except KeyError:
-        messages.add_message(request, messages.ERROR, 'Missing key element to add a new meter.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    if(meterName == None or meterUnit == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to add a new meter.', 'alert-danger')
+    if(meter_name is None or meter_unit is None):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
     try:
-        Meter.objects.get(meter_name=meterName)
+        Meter.objects.get(meter_name=meter_name)
     except Meter.DoesNotExist:
         #meter doesn't exist -> OK!
         pass
     else:
-        messages.add_message(request, messages.ERROR, 'Meter already exists. Cannot add a double entry.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Meter already exists. Cannot add a double entry.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    newMeter = Meter.objects.create(meter_name=meterName, meter_unit=meterUnit)
-    newMeter.save()
-    messages.add_message(request, messages.INFO, 'Meter {0} is added.'.format(newMeter.meter_name), 'alert-success')
+    new_meter = Meter.objects.create(meter_name=meter_name, meter_unit=meter_unit)
+    new_meter.save()
+    messages.add_message(request,
+                         messages.INFO,
+                         'Meter {0} is added.'.format(new_meter.meter_name),
+                         'alert-success')
     return redirect(reverse('utilities:meter_list'))
 
 @permission_required('utilities.delete_meter')
@@ -49,28 +72,44 @@ def delete_meter(request):
     Delete a meter
     """
     try:
-        meterName = request.POST.get('meter_name')
+        meter_name = request.POST.get('meter_name')
     except KeyError:
-        messages.add_message(request, messages.ERROR, 'Missing key element to delete meter.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to delete meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    if(meterName == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to delete meter.', 'alert-danger')
+    if meter_name is None:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to delete meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
     deleted = 0
     try:
-        (deleted, deletedMeter) = Meter.objects.get(meter_name=meterName).delete()
+        #pylint: disable=unused-variable
+        (deleted, deleted_meter) = Meter.objects.get(meter_name=meter_name).delete()
     except Meter.DoesNotExist:
-        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted meter.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Cannot delete already deleted meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
-    finally:
-        if (deleted>=1):
-            messages.add_message(request, messages.INFO, 'Meter {0} is deleted'.format(meterName), 'alert-success')
-            return redirect(reverse('utilities:meter_list'))
-        else:
-            messages.add_message(request, messages.ERROR, 'Cannot delete already deleted meter.', 'alert-danger')
-            return redirect(reverse('utilities:meter_list'))
+
+    if deleted >= 1:
+        messages.add_message(request,
+                             messages.INFO,
+                             'Meter {0} is deleted'.format(meter_name),
+                             'alert-success')
+        return redirect(reverse('utilities:meter_list'))
+
+    messages.add_message(request,
+                         messages.ERROR,
+                         'Cannot delete already deleted meter.',
+                         'alert-danger')
+    return redirect(reverse('utilities:meter_list'))
 
 @permission_required('utilities.change_meter')
 def edit_meter(request):
@@ -78,38 +117,53 @@ def edit_meter(request):
     Edit a meter.
     """
     try:
-        meterName = request.POST.get('meter_name')
-        newName = request.POST.get('new_name')
-        meterUnit = request.POST.get('unit_name')
+        meter_name = request.POST.get('meter_name')
+        new_name = request.POST.get('new_name')
+        meter_unit = request.POST.get('unit_name')
     except KeyError:
-        messages.add_message(request, messages.ERROR, 'Missing key element to change a meter.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to change a meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    if(meterName == None or meterUnit == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to change a meter.', 'alert-danger')
+    if(meter_name is None or meter_unit is None):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to change a meter.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
     try:
-        theMeter = Meter.objects.get(meter_name=meterName)
+        edited_meter = Meter.objects.get(meter_name=meter_name)
     except Meter.DoesNotExist:
-        messages.add_message(request, messages.ERROR, 'Cannot change a meter that doesn\'t exist yet.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Cannot change a meter that doesn\'t exist yet.',
+                             'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
     try:
-        m = Meter.objects.get(meter_name=newName)
+        namecheck_meter = Meter.objects.get(meter_name=new_name)
     except Meter.DoesNotExist:
         #new name isn't taken -> OK!
         pass
     else:
-        if(m.pk != theMeter.pk):
+        if namecheck_meter.pk != edited_meter.pk:
             #just changing the unit name
-            messages.add_message(request, messages.ERROR, 'Name is already taken', 'alert-danger')
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Name is already taken',
+                                 'alert-danger')
             return redirect(reverse('utilities:meter_list'))
 
-    theMeter.meter_name = newName
-    theMeter.unit_name = meterUnit
-    theMeter.save()
-    messages.add_message(request, messages.INFO, 'Meter {0} is changed.'.format(theMeter.meter_name), 'alert-success')
+    edited_meter.meter_name = new_name
+    edited_meter.unit_name = meter_unit
+    edited_meter.save()
+    messages.add_message(request,
+                         messages.INFO,
+                         'Meter {0} is changed.'.format(edited_meter.meter_name),
+                         'alert-success')
     return redirect(reverse('utilities:meter_list'))
 
 @login_required
@@ -120,11 +174,14 @@ def list_readings(request):
     """
     try:
         readings = Reading.objects.all()
-    except DoesNotExist:
+    except Reading.DoesNotExist:
         pass
 
     meters = Meter.objects.all()
-    return render(request, 'utilities/reading_list.html', {'object_list': readings, 'meters': meters})
+    return render(request,
+                  'utilities/reading_list.html',
+                  {'object_list': readings,
+                   'meters': meters})
 
 @permission_required('utilities.add_reading')
 def add_reading(request):
@@ -137,26 +194,37 @@ def add_reading(request):
         reading_number = Decimal(request.POST.get('reading'))
         remark = request.POST.get('remark')
     except (KeyError, TypeError):
-        messages.add_message(request, messages.ERROR, 'Missing key element to add a new reading.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(meter == None or reading_date == None or reading_number == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to add a new reading.', 'alert-danger')
+    if(meter is None or reading_date is None or reading_number is None):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
     try:
         meter = Meter.objects.get(pk=meter)
     except Meter.DoesNotExist:
-        messages.add_message(request, messages.ERROR, 'Unknown meter', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Unknown meter',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
     else:
-        r = Reading.objects.create(
-                meter = meter,
-                reading = reading_number,
-                date = reading_date,
-                remark = remark)
-        r.save()
-    messages.add_message(request, messages.INFO, '{0} is added.'.format(r), 'alert-success')
+        new_reading = Reading.objects.create(meter=meter,
+                                             reading=reading_number,
+                                             date=reading_date,
+                                             remark=remark)
+        new_reading.save()
+    messages.add_message(request,
+                         messages.INFO,
+                         '{0} is added.'.format(new_reading),
+                         'alert-success')
     return redirect(reverse('utilities:reading_list'))
 
 @permission_required('utilities.delete_reading')
@@ -167,25 +235,41 @@ def delete_reading(request):
     try:
         reading_id = int(request.POST.get('reading_id'))
     except KeyError:
-        messages.add_message(request, messages.ERROR, 'Missing key element to delete reading.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to delete reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(reading_id == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to delete reading.', 'alert-danger')
+    if reading_id is None:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to delete reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
     deleted = 0
     try:
-        (deleted, deletedReading) = Reading.objects.get(pk=reading_id).delete()
+        #pylint: disable=unused-variable
+        (deleted, deleted_reading) = Reading.objects.get(pk=reading_id).delete()
     except Reading.DoesNotExist:
-        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted reading.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Cannot delete already deleted reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
-    if (deleted>=1):
-        messages.add_message(request, messages.INFO, 'Reading is deleted', 'alert-success')
+    if deleted >= 1:
+        messages.add_message(request,
+                             messages.INFO,
+                             'Reading is deleted',
+                             'alert-success')
         return redirect(reverse('utilities:reading_list'))
-    else:
-        messages.add_message(request, messages.ERROR, 'Cannot delete already deleted reading.', 'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
+
+    messages.add_message(request,
+                         messages.ERROR,
+                         'Cannot delete already deleted reading.',
+                         'alert-danger')
+    return redirect(reverse('utilities:reading_list'))
 
 @permission_required('utilities.edit_reading')
 def edit_reading(request):
@@ -199,25 +283,37 @@ def edit_reading(request):
         reading_number = Decimal(request.POST.get('reading'))
         remark = request.POST.get('remark')
     except (KeyError, TypeError):
-        messages.add_message(request, messages.ERROR, 'Missing key element to change the reading.', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to change the reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(meter == None or reading_date == None or reading_number == None):
-        messages.add_message(request, messages.ERROR, 'Missing key element to change the reading.', 'alert-danger')
+    if(meter is None or reading_date is None or reading_number is None):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to change the reading.',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
     try:
         meter = Meter.objects.get(pk=meter)
     except Meter.DoesNotExist:
-        messages.add_message(request, messages.ERROR, 'Unknown meter', 'alert-danger')
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Unknown meter',
+                             'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    r = Reading.objects.get(pk=reading)
-    r.meter = meter
-    r.reading = reading_number
-    r.date = reading_date
-    r.remark = remark
-    r.save()
+    edited_reading = Reading.objects.get(pk=reading)
+    edited_reading.meter = meter
+    edited_reading.reading = reading_number
+    edited_reading.date = reading_date
+    edited_reading.remark = remark
+    edited_reading.save()
 
-    messages.add_message(request, messages.INFO, '{0} is changed.'.format(r), 'alert-success')
+    messages.add_message(request,
+                         messages.INFO,
+                         '{0} is changed.'.format(edited_reading),
+                         'alert-success')
     return redirect(reverse('utilities:reading_list'))
