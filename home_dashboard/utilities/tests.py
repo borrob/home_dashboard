@@ -1,11 +1,14 @@
 """
 Testing of all the classes and endpoints for the utilities app.
 """
+import datetime
 from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from .exceptions import MeterError, ReadingError
 from .models import Meter, Reading
+from .models import calculate_reading_on_date
 
 # Create your tests here.
 
@@ -318,3 +321,63 @@ class ReadingViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")
+
+class UsageTests(TestCase):
+    """
+    Test the usage.
+    """
+
+    def test_correct_usage_calculation(self):
+        """
+        Test to see if the useage is correctly calculated.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=1,
+                            meter=meter)
+        reading_2 = Reading(date=datetime.date(2018, 1, 10),
+                            reading=10,
+                            meter=meter)
+        my_date = datetime.date(2018, 1, 5)
+        use = calculate_reading_on_date(my_date, reading_1, reading_2)
+        self.assertEqual(use, 5)
+
+    def test_error_for_different_meters_usage(self):
+        """
+        Test the error message for calculating the usage on different meters.
+        """
+
+        meter_1 = Meter(meter_name='testmeter', meter_unit='m')
+        meter_2 = Meter(meter_name='testmeter2', meter_unit='s')
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=1,
+                            meter=meter_1)
+        reading_2 = Reading(date=datetime.date(2018, 1, 10),
+                            reading=10,
+                            meter=meter_2)
+        my_date = datetime.date(2018, 1, 5)
+        try:
+            calculate_reading_on_date(my_date, reading_1, reading_2)
+        except MeterError:
+            pass
+        else:
+            self.fail('Expected MeterError')
+
+    def test_usage_on_same_date(self):
+        """
+        Test to see if the useage is correctly calculated.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=1,
+                            meter=meter)
+        reading_2 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=10,
+                            meter=meter)
+        my_date = datetime.date(2018, 1, 5)
+        try:
+            calculate_reading_on_date(my_date, reading_1, reading_2)
+        except ReadingError:
+            pass
+        else:
+            self.fail('Expected ReadingError')

@@ -3,6 +3,8 @@ Specify the data models for the utilities app.
 """
 from django.db import models
 
+from .exceptions import MeterError, ReadingError
+
 # Create your models here.
 class Meter(models.Model):
     """
@@ -28,3 +30,27 @@ class Reading(models.Model):
                                                    u=self.meter.meter_unit,
                                                    d=self.date,
                                                    m=self.meter.meter_name)
+
+def calculate_reading_on_date(the_date, reading_1, reading_2):
+    """
+    Calculate the useage on the_date based on the the input readings.
+
+    Raises errors when something is not good.
+    """
+    if reading_1.meter != reading_2.meter:
+        raise MeterError('Meters are not equal, cannot calculate usegage.')
+    if reading_1.date == reading_2.date:
+        raise ReadingError('Readings are of the same reader on the same date.')
+    if reading_1.date > reading_2.date:
+        # making sure 1 is before 2
+        reading_1, reading_2 = reading_2, reading_1
+    if the_date < reading_1.date or the_date > reading_2.date:
+        raise ValueError('The specified date is not between the dates of the readings.')
+
+    days_between_readings = (reading_2.date - reading_1.date).days
+    days_since_reading_1 = (the_date - reading_1.date).days
+    usage_between_reading = reading_2.reading - reading_1.reading
+    reading_on_date = reading_1.reading \
+                      + usage_between_reading \
+                      * days_since_reading_1/days_between_readings
+    return reading_on_date
