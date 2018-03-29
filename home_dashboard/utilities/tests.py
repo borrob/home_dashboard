@@ -342,7 +342,7 @@ class UsageTests(TestCase):
         use = calculate_reading_on_date(my_date, reading_1, reading_2)
         self.assertEqual(use, 5)
 
-    def test_error_for_different_meters_usage(self):
+    def test_error_usage_diff_meters(self):
         """
         Test the error message for calculating the usage on different meters.
         """
