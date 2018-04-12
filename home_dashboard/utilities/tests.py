@@ -9,6 +9,7 @@ from django.urls import reverse
 from .exceptions import MeterError, ReadingError
 from .models import Meter, Reading
 from .models import calculate_reading_on_date
+from .models import update_usage_after_new_reading
 
 # Create your tests here.
 
@@ -375,9 +376,21 @@ class UsageTests(TestCase):
                             reading=10,
                             meter=meter)
         my_date = datetime.date(2018, 1, 5)
-        try:
-            calculate_reading_on_date(my_date, reading_1, reading_2)
-        except ReadingError:
-            pass
-        else:
-            self.fail('Expected ReadingError')
+        r = calculate_reading_on_date(my_date, reading_1, reading_2)
+        self.assertEqual(reading_1.reading, r)
+
+    def test_usage_calc_on_insert(self):
+        """
+        Test if the usage is calculated correctly on inserting a new reading.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 8, 1),
+                            reading=1,
+                            meter=meter)
+        reading_2 = Reading(date=datetime.date(2018, 10, 10),
+                            reading=10,
+                            meter=meter)
+        reading_1.save()
+        reading_2.save()
+        update_usage_after_new_reading(reading_2)
