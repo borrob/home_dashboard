@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
-from .models import Meter, Reading, update_usage_after_new_reading
+from .models import Meter, Reading, Usage, update_usage_after_new_reading
 
 # Create your views here.
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
@@ -323,3 +323,20 @@ def edit_reading(request):
                          '{0} is changed.'.format(edited_reading),
                          'alert-success')
     return redirect(reverse('utilities:reading_list'))
+
+@login_required
+def list_usages(request):
+    """
+    Show all the usages of the readings.
+    TODO: add paging
+    TODO: make selection of meter, data, ...
+    TODO: add sorting
+    """
+    try:
+        usages = Usage.objects.all()
+    except Usage.DoesNotExist:
+        pass
+
+    meters = Meter.objects.all()
+
+    return render(request, 'utilities/usage_list.html', {'object_list': usages, 'meters': meters})

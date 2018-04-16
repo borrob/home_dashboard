@@ -327,6 +327,12 @@ class UsageTests(TestCase):
     """
     Test the usage.
     """
+    def setUp(self):
+        """
+        Setup a test user for login.
+        """
+        self.client = Client()
+        self.user = User.objects.create_user('testuser', 'test@user.com', 'q2w3E$R%')
 
     def test_correct_usage_calculation(self):
         """
@@ -396,3 +402,9 @@ class UsageTests(TestCase):
         update_usage_after_new_reading(reading_2)
         use = Usage.objects.get(month=9, year=2018, meter=meter.id)
         self.assertEqual(use.usage, 5)
+
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:usage_list'),
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "5")

@@ -15,5 +15,6 @@ urlpatterns = [
     path('readinglist', views.list_readings, name='reading_list'),
     path('addreading', views.add_reading, name='add_reading'),
     path('deletereading', views.delete_reading, name='delete_reading'),
-    path('editreading', views.edit_reading, name='edit_reading')
+    path('editreading', views.edit_reading, name='edit_reading'),
+    path('usagelist', views.list_usages, name='usage_list')
 ]
