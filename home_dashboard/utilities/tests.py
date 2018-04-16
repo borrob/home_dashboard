@@ -6,8 +6,8 @@ from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from .exceptions import MeterError, ReadingError
-from .models import Meter, Reading
+from .exceptions import MeterError
+from .models import Meter, Reading, Usage
 from .models import calculate_reading_on_date
 from .models import update_usage_after_new_reading
 
@@ -336,7 +336,7 @@ class UsageTests(TestCase):
         reading_1 = Reading(date=datetime.date(2018, 1, 1),
                             reading=1,
                             meter=meter)
-        reading_2 = Reading(date=datetime.date(2018, 1, 10),
+        reading_2 = Reading(date=datetime.date(2018, 1, 11),
                             reading=10,
                             meter=meter)
         my_date = datetime.date(2018, 1, 5)
@@ -376,8 +376,8 @@ class UsageTests(TestCase):
                             reading=10,
                             meter=meter)
         my_date = datetime.date(2018, 1, 5)
-        r = calculate_reading_on_date(my_date, reading_1, reading_2)
-        self.assertEqual(reading_1.reading, r)
+        reading = calculate_reading_on_date(my_date, reading_1, reading_2)
+        self.assertEqual(reading_1.reading, reading)
 
     def test_usage_calc_on_insert(self):
         """
@@ -386,11 +386,13 @@ class UsageTests(TestCase):
         meter = Meter(meter_name='testmeter', meter_unit='m')
         meter.save()
         reading_1 = Reading(date=datetime.date(2018, 8, 1),
-                            reading=1,
+                            reading=0,
                             meter=meter)
-        reading_2 = Reading(date=datetime.date(2018, 10, 10),
+        reading_2 = Reading(date=datetime.date(2018, 10, 1),
                             reading=10,
                             meter=meter)
         reading_1.save()
         reading_2.save()
         update_usage_after_new_reading(reading_2)
+        use = Usage.objects.get(month=9, year=2018, meter=meter.id)
+        self.assertEqual(use.usage, 5)

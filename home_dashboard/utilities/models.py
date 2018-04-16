@@ -4,7 +4,7 @@ Specify the data models for the utilities app.
 from datetime import date
 from django.db import models
 
-from .exceptions import MeterError, ReadingError
+from .exceptions import MeterError
 
 # Create your models here.
 class Meter(models.Model):
@@ -41,15 +41,13 @@ class Usage(models.Model):
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     usage = models.DecimalField(max_digits=10, decimal_places=2)
 
-def update_usage_after_new_reading(reading):
+def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
     """
     A new reading is inserted, so try and calculate the new montly usage.
     """
-    readings = get_readings_before_and_after(reading.date, reading.meter)
-    last_reading_before = readings.get('before')
-    first_reading_after = readings.get('after')
-
+    last_reading_before = get_readings_before_or_after(reading.date, reading.meter, 'before')
     last_reading_before = last_reading_before if last_reading_before else reading
+    first_reading_after = get_readings_before_or_after(reading.date, reading.meter, 'after')
     first_reading_after = first_reading_after if first_reading_after else reading
 
     month_before = last_reading_before.date.month
@@ -58,27 +56,37 @@ def update_usage_after_new_reading(reading):
     year_after = first_reading_after.date.year
 
     #clean up
-    Usage.objects.filter(year__gte=year_before, month__gte=month_before).filter(year__lte=year_after, month__lte=month_after).delete()
+    Usage.objects.filter(year__gte=year_before, month__gte=month_before).\
+        filter(year__lte=year_after, month__lte=month_after).\
+        delete()
 
     #calculate new usages
-    for y in range(year_before, year_after+1):
-        for m in range(1, 12+1):
-            if y == year_before and m < month_before:
+    for year in range(year_before, year_after+1):
+        for month in range(1, 12+1):
+            if year == year_before and month < month_before:
                 pass
-            elif y == year_after and m > month_after:
+            elif year == year_after and month > month_after:
                 pass
             else:
-                month_date_1 = date(y, m, 1)
-                if m == 12:
-                    month_date_31 = date(y+1, 1, 1)
+                month_date_1 = date(year, month, 1)
+                if month == 12:
+                    month_date_31 = date(year+1, 1, 1)
                 else:
-                    month_date_31 = date(y, m+1, 1)
+                    month_date_31 = date(year, month+1, 1)
 
                 try:
-                    r_before1 = Reading.objects.filter(meter=reading.meter).filter(date__lte=month_date_1).order_by('-date')[0]
-                    r_after1 = Reading.objects.filter(meter=reading.meter).filter(date__gt=month_date_1).order_by('date')[0]
-                    r_before31 = Reading.objects.filter(meter=reading.meter).filter(date__lt=month_date_31).order_by('-date')[0]
-                    r_after31 = Reading.objects.filter(meter=reading.meter).filter(date__gte=month_date_31).order_by('date')[0]
+                    r_before1 = Reading.objects.filter(meter=reading.meter).\
+                                    filter(date__lte=month_date_1).\
+                                    order_by('-date')[0]
+                    r_after1 = Reading.objects.filter(meter=reading.meter).\
+                                    filter(date__gt=month_date_1).\
+                                    order_by('date')[0]
+                    r_before31 = Reading.objects.filter(meter=reading.meter).\
+                                    filter(date__lt=month_date_31).\
+                                    order_by('-date')[0]
+                    r_after31 = Reading.objects.filter(meter=reading.meter).\
+                                    filter(date__gte=month_date_31).\
+                                    order_by('date')[0]
                 except IndexError:
                     pass #try again next month
                 else:
@@ -86,28 +94,38 @@ def update_usage_after_new_reading(reading):
                     last_of_month = calculate_reading_on_date(month_date_31, r_before31, r_after31)
 
                     use = last_of_month - first_of_month
-                    usage=Usage.objects.create(meter=reading.meter, month=m, year=y, usage=use)
+                    usage = Usage.objects.create(meter=reading.meter,
+                                                 month=month,
+                                                 year=year,
+                                                 usage=use)
                     usage.save()
 
-def get_readings_before_and_after(the_date, meter):
+def get_readings_before_or_after(the_date, meter, before_after):
     """
     Get the first reading before and first reading after this date.
 
-    This method does not generate an exception, but returns none if the reading before or after does not exists.
-    
+    This method does not generate an exception, but returns none if the reading
+    before or after does not exists.
+
     TODO: add testing!
     """
-    last_reading_before = None
-    first_reading_after = None
-    try:
-        last_reading_before = Reading.objects.filter(meter=meter).filter(date__lt=the_date).order_by('-date')[0]
-    except (Reading.DoesNotExist, IndexError):
-        pass
-    try:
-        first_reading_after = Reading.objects.filter(meter=meter).filter(date__gt=the_date).order_by('date')[0]
-    except (Reading.DoesNotExist, IndexError):
-        pass
-    return {'before': last_reading_before, 'after': first_reading_after}
+    reading = None
+    if before_after == 'before':
+        try:
+            reading = Reading.objects.filter(meter=meter).\
+                      filter(date__lt=the_date).\
+                      order_by('-date')[0]
+        except (Reading.DoesNotExist, IndexError):
+            pass
+    elif before_after == 'after':
+        try:
+            reading = Reading.objects.filter(meter=meter).\
+                      filter(date__gt=the_date).\
+                      order_by('date')[0]
+        except (Reading.DoesNotExist, IndexError):
+            pass
+
+    return reading
 
 def calculate_reading_on_date(the_date, reading_1, reading_2):
     """
@@ -125,7 +143,7 @@ def calculate_reading_on_date(the_date, reading_1, reading_2):
     if the_date < reading_1.date or the_date > reading_2.date:
         raise ValueError('The specified date is not between the dates of the readings.')
 
-    days_between_readings = (reading_2.date - reading_1.date).days
+    days_between_readings = (reading_2.date - reading_1.date).days - 1
     days_since_reading_1 = (the_date - reading_1.date).days
     usage_between_reading = reading_2.reading - reading_1.reading
     reading_on_date = reading_1.reading \
