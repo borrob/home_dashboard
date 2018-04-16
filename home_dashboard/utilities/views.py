@@ -1,7 +1,7 @@
 """
 Defining the utilities URL links and their respones.
 """
-
+from datetime import datetime
 from decimal import Decimal
 
 from django.contrib import messages
@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
-from .models import Meter, Reading
+from .models import Meter, Reading, update_usage_after_new_reading
 
 # Create your views here.
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
@@ -218,9 +218,12 @@ def add_reading(request):
     else:
         new_reading = Reading.objects.create(meter=meter,
                                              reading=reading_number,
-                                             date=reading_date,
+                                             date=datetime.\
+                                                  strptime(reading_date, '%Y-%m-%d').\
+                                                  date(),
                                              remark=remark)
         new_reading.save()
+        update_usage_after_new_reading(new_reading)
     messages.add_message(request,
                          messages.INFO,
                          '{0} is added.'.format(new_reading),
@@ -251,7 +254,9 @@ def delete_reading(request):
     deleted = 0
     try:
         #pylint: disable=unused-variable
-        (deleted, deleted_reading) = Reading.objects.get(pk=reading_id).delete()
+        reading_to_delete = Reading.objects.get(pk=reading_id)
+        (deleted, deleted_reading) = reading_to_delete.delete()
+        update_usage_after_new_reading(reading_to_delete)
     except Reading.DoesNotExist:
         messages.add_message(request,
                              messages.ERROR,
@@ -308,9 +313,10 @@ def edit_reading(request):
     edited_reading = Reading.objects.get(pk=reading)
     edited_reading.meter = meter
     edited_reading.reading = reading_number
-    edited_reading.date = reading_date
+    edited_reading.date = datetime.strptime(reading_date, '%Y-%m-%d').date()
     edited_reading.remark = remark
     edited_reading.save()
+    update_usage_after_new_reading(edited_reading)
 
     messages.add_message(request,
                          messages.INFO,
