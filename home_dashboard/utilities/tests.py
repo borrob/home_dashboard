@@ -405,6 +405,6 @@ class UsageTests(TestCase):
 
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.get(reverse('utilities:usage_list'),
-                                    follow=True)
+                                   follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
