@@ -174,6 +174,8 @@ def list_readings(request):
     """
     try:
         readings = Reading.objects.all()
+        if request.GET.get('m_id'):
+            readings = readings.filter(meter_id=request.GET.get('m_id'))
     except Reading.DoesNotExist:
         pass
 
@@ -334,6 +336,8 @@ def list_usages(request):
     """
     try:
         usages = Usage.objects.all()
+        if request.GET.get('m_id'):
+            usages = usages.filter(meter_id=request.GET.get('m_id'))
     except Usage.DoesNotExist:
         pass
 

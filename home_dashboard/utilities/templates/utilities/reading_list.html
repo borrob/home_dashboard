@@ -6,6 +6,16 @@
     <main role="main" class="container">
 
 		<div class="card">
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'utilities:reading_list' %}" class="btn btn-secondary" id="meter_all">All</a>
+                        {% for m in meters %}
+                            <a href="{% url 'utilities:reading_list' %}?m_id={{ m.id }}" class="btn btn-secondary" id="meter_{{m.id}}">{{ m.meter_name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
 			<table class="table table-hover">
 				<thead>
 					<th></th>
@@ -47,4 +57,15 @@
 
     </main>
 
+{% endblock %}
+
+{% block script %}
+        <script>
+            {% if request.GET.m_id %}
+                var active_meter = {{ request.GET.m_id }};
+                $('#meter_' + active_meter ).removeClass('btn-secondary').addClass('btn-primary');
+            {% else %}
+                $('#meter_all').removeClass('btn-secondary').addClass('btn-primary');
+            {% endif %}
+        </script>
 {% endblock %}
