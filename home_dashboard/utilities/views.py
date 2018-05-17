@@ -278,7 +278,7 @@ def delete_reading(request):
                          'alert-danger')
     return redirect(reverse('utilities:reading_list'))
 
-@permission_required('utilities.edit_reading')
+@permission_required('utilities.change_reading')
 def edit_reading(request):
     """
     Edit a reading.

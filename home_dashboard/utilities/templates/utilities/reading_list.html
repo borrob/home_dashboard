@@ -37,7 +37,7 @@
                             {% if perms.utilities.delete_reading %}
                               <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"</a>
                             {% endif %}
-                            {% if perms.utilities.edit_reading %}
+                            {% if perms.utilities.change_reading %}
                               <a onclick="edit_reading({{ r.pk }}, {{r.meter_id}}, '{{r.date | date:"Y-m-d"}}', {{r.reading}}, '{{r.remark}}')"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"</a>
                             {% endif %}
                         </td>
