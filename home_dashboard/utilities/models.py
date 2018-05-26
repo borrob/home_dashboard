@@ -11,7 +11,7 @@ class Meter(models.Model):
     """
     The meer model specifies the parameters of the meter.
     """
-    meter_name = models.CharField(max_length=30)
+    meter_name = models.CharField(max_length=30, unique=True)
     meter_unit = models.CharField(max_length=10)
 
     def __str__(self):
@@ -24,7 +24,7 @@ class Reading(models.Model):
     date = models.DateField()
     reading = models.DecimalField(max_digits=10, decimal_places=2)
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
-    remark = models.CharField(max_length=255)
+    remark = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return 'Reading: {d} {m} - {r} {u}'.format(r=self.reading,
