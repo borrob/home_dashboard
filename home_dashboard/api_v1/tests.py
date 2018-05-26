@@ -1,11 +1,10 @@
 """
 Testing the API V1 REST interface.
 """
+import json
 from django.contrib.auth.models import User, Permission
-from django.shortcuts import get_object_or_404
 from django.test import Client, TestCase
 from django.urls import reverse
-import json
 
 from utilities.models import Meter
 
@@ -13,6 +12,8 @@ class RestMeterTests(TestCase):
     """
     Test the REST functionality for the Meters.
     """
+    # pylint: disable=invalid-name
+
     def setUp(self):
         """
         Setup a test user for login.
@@ -44,7 +45,7 @@ class RestMeterTests(TestCase):
         The rest interface should *not* allow anyone to add new data.
         """
         data = {'meter_name': 'test', 'meter_unit': 'X'}
-        response = self.client.post(reverse('api_v1:meter_list'), follow=True)
+        response = self.client.post(reverse('api_v1:meter_list'), data=data, follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_login_to_post_new_meter(self):
@@ -64,7 +65,10 @@ class RestMeterTests(TestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter', 'meter_unit': 'X'})
-        response = self.client.post(reverse('api_v1:meter_list'), data, follow=True, content_type='application/json')
+        response = self.client.post(reverse('api_v1:meter_list'),
+                                    data,
+                                    follow=True,
+                                    content_type='application/json')
         self.assertEqual(response.status_code, 201)
         self.assertIn('testmeter', str(response.content))
         self.assertIn('X', str(response.content))
@@ -77,8 +81,14 @@ class RestMeterTests(TestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'test', 'meter_unit': 'X'})
-        response1 = self.client.post(reverse('api_v1:meter_list'),data, follow=True, content_type='application/json')
-        response2 = self.client.post(reverse('api_v1:meter_list'),data, follow=True, content_type='application/json')
+        response1 = self.client.post(reverse('api_v1:meter_list'),
+                                     data,
+                                     follow=True,
+                                     content_type='application/json')
+        response2 = self.client.post(reverse('api_v1:meter_list'),
+                                     data,
+                                     follow=True,
+                                     content_type='application/json')
         self.assertEqual(response1.status_code, 201)
         self.assertEqual(response2.status_code, 400)
 

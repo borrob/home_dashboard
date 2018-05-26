@@ -30,7 +30,8 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise PermissionDenied(detail='You do not have permission to add a new meter', code=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied(detail='You do not have permission to add a new meter',
+                                   code=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET', 'PUT'])
 def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statements
