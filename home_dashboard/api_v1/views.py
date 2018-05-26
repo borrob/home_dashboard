@@ -3,7 +3,7 @@ Provides the views for the REST interface.
 """
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 
 from utilities.models import Meter
@@ -23,12 +23,14 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
         return Response(serializer.data)
 
     if request.method == 'POST':
-        serializer = MeterSerializer(data=request.data)
-        if serializer.is_valid():
-            #TODO: check if we are allowed to add it and if there is no meter with that name
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.has_perm('utilities.add_meter'):
+            serializer = MeterSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            raise PermissionDenied(detail='You do not have permission to add a new meter', code=status.HTTP_403_FORBIDDEN)
 
 @api_view(['GET', 'PUT'])
 def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statements
