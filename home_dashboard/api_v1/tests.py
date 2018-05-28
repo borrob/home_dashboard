@@ -112,3 +112,54 @@ class RestMeterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'testmeter')
         self.assertContains(response, 'X')
+
+    def test_special_login_to_put_changes_to_meter(self):
+        """
+        The rest interface should allow people with permission to alter meter.
+        """
+        meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
+        meter.save()
+
+        p = Permission.objects.get(name='Can change meter')
+        self.user.user_permissions.add(p)
+
+        url = reverse('api_v1:meter_details', args=[1])
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = json.dumps({'meter_name': 'testmeter_altered'})
+        response = self.client.put(url,
+                                   data,
+                                   follow=True,
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('testmeter_altered', str(response.content))
+        self.assertIn('X', str(response.content))
+
+        data = json.dumps({'meter_unit': 'Y'})
+        response = self.client.put(url,
+                                   data,
+                                   follow=True,
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('testmeter_altered', str(response.content))
+        self.assertIn('Y', str(response.content))
+
+    def test_cannot_change_metername_to_existing_(self):
+        """
+        Changing a name of a meter to a name already in the database should not be ok.
+        """
+        meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
+        meter.save()
+        meter2 = Meter.objects.create(meter_name='testmeter_alt', meter_unit='X')
+        meter2.save()
+
+        p = Permission.objects.get(name='Can change meter')
+        self.user.user_permissions.add(p)
+
+        url = reverse('api_v1:meter_details', args=[2])
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = json.dumps({'meter_name': 'testmeter'})
+        response = self.client.put(url,
+                                   data,
+                                   follow=True,
+                                   content_type='application/json')
+        self.assertEqual(response.status_code, 404)

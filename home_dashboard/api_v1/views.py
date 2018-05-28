@@ -1,6 +1,7 @@
 """
 Provides the views for the REST interface.
 """
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -57,7 +58,10 @@ def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statem
     if request.method == 'PUT':
         meter.meter_name = request.data.get('meter_name', meter.meter_name)
         meter.meter_unit = request.data.get('meter_unit', meter.meter_unit)
-        #TODO: check if we are allowed to do this and if there is no meter with this name
-        meter.save()
-        serializer = MeterSerializer(meter)
-        return Response(serializer.data)
+        try:
+            meter.save()
+        except IntegrityError:
+            return Response('Meter name already exists', status=status.HTTP_404_NOT_FOUND)
+        else:
+            serializer = MeterSerializer(meter)
+            return Response(serializer.data)
