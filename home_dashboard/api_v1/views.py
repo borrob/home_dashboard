@@ -70,10 +70,10 @@ def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statem
 
 
 @api_view(['GET', 'POST'])
-def reading_list(request):
+def reading_list(request): #pylint: disable=inconsistent-return-statements
     """
     Shows the entire set of readings.
-    
+
     get: shows the entire set of readings
     post: create new reading
     """
@@ -91,18 +91,17 @@ def reading_list(request):
             # todo: check if no other reading of this day exists
             # todo: calculate usage
             return Response(serializer.date, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.erros, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT'])
-def reading_detail(request, reading_id):
+def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-statements
     """
     Show the details of a specific reading
-    
+
     get: show the detail information
     put: update the data
-    
+
     :param request: the http request
     :param int reading_id: the id of the request reading
     :return: http-response with data, or error
