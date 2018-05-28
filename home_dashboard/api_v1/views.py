@@ -4,11 +4,12 @@ Provides the views for the REST interface.
 from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.response import Response
 
-from utilities.models import Meter
-from utilities.serializers import MeterSerializer
+from utilities.models import Meter, Reading
+from utilities.serializers import MeterSerializer, ReadingSerializer
+
 
 @api_view(['GET', 'POST'])
 def meter_list(request): #pylint: disable=inconsistent-return-statements
@@ -33,6 +34,7 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
         else:
             raise PermissionDenied(detail='You do not have permission to add a new meter',
                                    code=status.HTTP_403_FORBIDDEN)
+
 
 @api_view(['GET', 'PUT'])
 def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statements
@@ -65,3 +67,68 @@ def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statem
         else:
             serializer = MeterSerializer(meter)
             return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+def reading_list(request):
+    """
+    Shows the entire set of readings.
+    
+    get: shows the entire set of readings
+    post: create new reading
+    """
+    if request.method == 'GET':
+        readinglist = Reading.objects.all()
+        serializer = ReadingSerializer(readinglist, many=True)
+        return Response(serializer.data)
+
+    if request.method == 'POST':
+        if not request.user.has_perm('utilities.add_reading'):
+            raise PermissionDenied(detail='You do not have the permission to add a new reading.')
+        serializer = ReadingSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            # todo: check if no other reading of this day exists
+            # todo: calculate usage
+            return Response(serializer.date, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.erros, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT'])
+def reading_detail(request, reading_id):
+    """
+    Show the details of a specific reading
+    
+    get: show the detail information
+    put: update the data
+    
+    :param request: the http request
+    :param int reading_id: the id of the request reading
+    :return: http-response with data, or error
+    """
+    if not reading_id:
+        raise ParseError('ID of reading not supplied')
+
+    try:
+        reading = Reading.objects.get(pk=reading_id)
+    except Reading.DoesNotExist:
+        raise NotFound('No reading with this ID.')
+
+    if request.method == 'GET':
+        serializer = ReadingSerializer(reading)
+        return Response(serializer.data)
+
+    if request.method == 'PUT':
+        reading.date = request.data.get('date', reading.date)
+        try:
+            meter = Meter.objects.get(pk=request.data.get('meter', reading.meter.id))
+        except Meter.DoesNotExist:
+            raise NotFound('No such meter id')
+        reading.meter = meter
+        reading.reading = request.data.get('reading', reading.reading)
+        reading.remark = request.data.get('remark', reading.remark)
+        reading.save()
+        #todo: update usage
+        serializer = ReadingSerializer(reading)
+        return Response(serializer.data, status=status.HTTP_200_OK)
