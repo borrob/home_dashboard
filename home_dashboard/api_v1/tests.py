@@ -7,7 +7,7 @@ from django.contrib.auth.models import User, Permission
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from utilities.models import Meter, Reading
+from utilities.models import Meter, Reading, Usage
 
 XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>'
 
@@ -183,9 +183,9 @@ class RestReadingTests(TestCase):
         """
         self.client = Client()
         self.user = User.objects.create_user('testuser', 'test@user.com', 'q2w3E$R%')
-        meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
-        meter.save()
-        reading = Reading.objects.create(meter=meter,
+        self.meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
+        self.meter.save()
+        reading = Reading.objects.create(meter=self.meter,
                                          reading=100,
                                          date=datetime.strptime('2001-01-01', '%Y-%m-%d').date(),
                                          remark='test reading')
@@ -306,3 +306,45 @@ class RestReadingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 500)
         self.assertContains(response, 2001)
+
+    def test_adding_reading_calculates_usage(self):
+        """
+        Adding a reading should calculate the usage
+        """
+        p = Permission.objects.get(name='Can add reading')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = XML_HEADER + '<root>' + \
+            '  <date>2001-02-01</date>' + \
+            '  <reading>200.00</reading>' + \
+            '  <meter>1</meter>' + \
+            '  <remark>testnew</remark>' + \
+            '</root>'
+        response = self.client.post(reverse('api_v1:reading_list'),
+                                    data=data,
+                                    content_type='application/xml',
+                                    follow=True)
+        self.assertEqual(response.status_code, 201)
+
+        usage = Usage.objects.get(pk=1)
+        self.assertEqual(usage.usage, 100)
+
+    def test_cannot_add_two_readings_on_same_data(self):
+        """
+        Only one reading per day per meter is allowd.
+        """
+        p = Permission.objects.get(name='Can add reading')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = XML_HEADER + '<root>' + \
+               '  <date>2001-01-01</date>' + \
+               '  <reading>-200.00</reading>' + \
+               '  <meter>1</meter>' + \
+               '  <remark>testnew</remark>' + \
+               '</root>'
+        response = self.client.post(reverse('api_v1:reading_list'),
+                                    data=data,
+                                    content_type='application/xml',
+                                    follow=True)
+
+        self.assertEqual(response.status_code, 400)

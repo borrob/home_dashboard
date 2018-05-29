@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
 from rest_framework.response import Response
 
-from utilities.models import Meter, Reading
+from utilities.models import Meter, Reading, update_usage_after_new_reading
 from utilities.serializers import MeterSerializer, ReadingSerializer
 
 
@@ -75,7 +75,7 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
     Shows the entire set of readings.
 
     get: shows the entire set of readings
-    post: create new reading
+    post: create new reading and update the usage calculation
     """
     if request.method == 'GET':
         readinglist = Reading.objects.all()
@@ -88,8 +88,7 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
         serializer = ReadingSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            # todo: check if no other reading of this day exists
-            # todo: calculate usage
+            update_usage_after_new_reading(Reading.objects.get(pk=serializer.data.get('id')))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -131,6 +130,6 @@ def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-st
         reading.reading = request.data.get('reading', reading.reading)
         reading.remark = request.data.get('remark', reading.remark)
         reading.save()
-        #todo: update usage
         serializer = ReadingSerializer(reading)
+        update_usage_after_new_reading(reading)
         return Response(serializer.data, status=status.HTTP_200_OK)

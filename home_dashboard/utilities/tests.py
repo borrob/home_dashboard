@@ -3,6 +3,7 @@ Testing of all the classes and endpoints for the utilities app.
 """
 import datetime
 from django.contrib.auth.models import User, Permission
+from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -323,6 +324,28 @@ class ReadingViewTests(TestCase):
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")
 
+    def test_cannot_store_two_readings_on_same_data_with_same_meter(self):
+
+        """
+        Test to see if the useage is correctly calculated.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=1,
+                            meter=meter)
+        reading_2 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=10,
+                            meter=meter)
+        try:
+            reading_1.save()
+            reading_2.save()
+        except IntegrityError:
+            pass
+        else:
+            self.fail('Expected unique constraint error.')
+
+
 class UsageTests(TestCase):
     """
     Test the usage.
@@ -337,15 +360,27 @@ class UsageTests(TestCase):
     def test_correct_usage_calculation(self):
         """
         Test to see if the useage is correctly calculated.
+        Readings (at beginning of each day):
+            2018-01-01: 0
+            2018-01-02: 1
+            2018-01-03: 2
+            2018-01-04: 3
+            2018-01-05: 4
+            2018-01-06: 5
+            2018-01-07: 6
+            2018-01-08: 7
+            2018-01-09: 8
+            2018-01-10: 9
+            2018-01-11: 10
         """
         meter = Meter(meter_name='testmeter', meter_unit='m')
         reading_1 = Reading(date=datetime.date(2018, 1, 1),
-                            reading=1,
+                            reading=0,
                             meter=meter)
         reading_2 = Reading(date=datetime.date(2018, 1, 11),
                             reading=10,
                             meter=meter)
-        my_date = datetime.date(2018, 1, 5)
+        my_date = datetime.date(2018, 1, 6)
         use = calculate_reading_on_date(my_date, reading_1, reading_2)
         self.assertEqual(use, 5)
 
@@ -391,16 +426,16 @@ class UsageTests(TestCase):
         """
         meter = Meter(meter_name='testmeter', meter_unit='m')
         meter.save()
-        reading_1 = Reading(date=datetime.date(2018, 8, 1),
+        reading_1 = Reading(date=datetime.date(2018, 7, 1),
                             reading=0,
                             meter=meter)
-        reading_2 = Reading(date=datetime.date(2018, 10, 1),
+        reading_2 = Reading(date=datetime.date(2018, 9, 1),
                             reading=10,
                             meter=meter)
         reading_1.save()
         reading_2.save()
         update_usage_after_new_reading(reading_2)
-        use = Usage.objects.get(month=9, year=2018, meter=meter.id)
+        use = Usage.objects.get(month=8, year=2018, meter=meter.id)
         self.assertEqual(use.usage, 5)
 
         self.client.login(username='testuser', password='q2w3E$R%')

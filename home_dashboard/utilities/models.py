@@ -26,6 +26,9 @@ class Reading(models.Model):
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     remark = models.CharField(max_length=255, blank=True)
 
+    class Meta:
+        unique_together = ('date', 'meter')
+
     def __str__(self):
         return 'Reading: {d} {m} - {r} {u}'.format(r=self.reading,
                                                    u=self.meter.meter_unit,
@@ -40,6 +43,9 @@ class Usage(models.Model):
     year = models.IntegerField()
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     usage = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        unique_together = ('year', 'month', 'meter')
 
 def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
     """
@@ -143,7 +149,7 @@ def calculate_reading_on_date(the_date, reading_1, reading_2):
     if the_date < reading_1.date or the_date > reading_2.date:
         raise ValueError('The specified date is not between the dates of the readings.')
 
-    days_between_readings = (reading_2.date - reading_1.date).days - 1
+    days_between_readings = (reading_2.date - reading_1.date).days
     days_since_reading_1 = (the_date - reading_1.date).days
     usage_between_reading = reading_2.reading - reading_1.reading
     reading_on_date = reading_1.reading \
