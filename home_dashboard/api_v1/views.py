@@ -90,7 +90,7 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
             serializer.save()
             # todo: check if no other reading of this day exists
             # todo: calculate usage
-            return Response(serializer.date, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -119,6 +119,9 @@ def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-st
         return Response(serializer.data)
 
     if request.method == 'PUT':
+        if not request.user.has_perm('utilities.change_reading'):
+            raise PermissionDenied(detail='You do not have the permission to change a reading.')
+
         reading.date = request.data.get('date', reading.date)
         try:
             meter = Meter.objects.get(pk=request.data.get('meter', reading.meter.id))
