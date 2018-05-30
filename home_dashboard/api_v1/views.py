@@ -21,12 +21,12 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
     """
     if request.method == 'GET':
         meterlist = Meter.objects.all()
-        serializer = MeterSerializer(meterlist, many=True)
+        serializer = MeterSerializer(meterlist, many=True, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'POST':
         if request.user.has_perm('utilities.add_meter'):
-            serializer = MeterSerializer(data=request.data)
+            serializer = MeterSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -37,7 +37,7 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
 
 
 @api_view(['GET', 'PUT'])
-def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statements
+def meter_detail(request, id): #pylint: disable=inconsistent-return-statements
     """
     Show details of a specific meter
 
@@ -45,16 +45,16 @@ def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statem
     put: changes the detalis of the meter with specified id and return the new details.
     """
 
-    if not meter_id:
+    if not id:
         return Response(None, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        meter = Meter.objects.get(pk=meter_id)
+        meter = Meter.objects.get(pk=id)
     except Meter.DoesNotExist:
         raise NotFound('No such meter id')
 
     if request.method == 'GET':
-        serializer = MeterSerializer(meter)
+        serializer = MeterSerializer(meter, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'PUT':
@@ -65,7 +65,7 @@ def meter_detail(request, meter_id): #pylint: disable=inconsistent-return-statem
         except IntegrityError:
             return Response('Meter name already exists', status=status.HTTP_404_NOT_FOUND)
         else:
-            serializer = MeterSerializer(meter)
+            serializer = MeterSerializer(meter, context={'request': request})
             return Response(serializer.data)
 
 
@@ -79,13 +79,13 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
     """
     if request.method == 'GET':
         readinglist = Reading.objects.all()
-        serializer = ReadingSerializer(readinglist, many=True)
+        serializer = ReadingSerializer(readinglist, many=True, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'POST':
         if not request.user.has_perm('utilities.add_reading'):
             raise PermissionDenied(detail='You do not have the permission to add a new reading.')
-        serializer = ReadingSerializer(data=request.data)
+        serializer = ReadingSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             update_usage_after_new_reading(Reading.objects.get(pk=serializer.data.get('id')))
@@ -94,7 +94,7 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
 
 
 @api_view(['GET', 'PUT'])
-def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-statements
+def reading_detail(request, id): #pylint: disable=inconsistent-return-statements
     """
     Show the details of a specific reading
 
@@ -105,16 +105,16 @@ def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-st
     :param int reading_id: the id of the request reading
     :return: http-response with data, or error
     """
-    if not reading_id:
+    if not id:
         raise ParseError('ID of reading not supplied')
 
     try:
-        reading = Reading.objects.get(pk=reading_id)
+        reading = Reading.objects.get(pk=id)
     except Reading.DoesNotExist:
         raise NotFound('No reading with this ID.')
 
     if request.method == 'GET':
-        serializer = ReadingSerializer(reading)
+        serializer = ReadingSerializer(reading, context={'request': request})
         return Response(serializer.data)
 
     if request.method == 'PUT':
@@ -130,6 +130,6 @@ def reading_detail(request, reading_id): #pylint: disable=inconsistent-return-st
         reading.reading = request.data.get('reading', reading.reading)
         reading.remark = request.data.get('remark', reading.remark)
         reading.save()
-        serializer = ReadingSerializer(reading)
+        serializer = ReadingSerializer(reading, context={'request': request})
         update_usage_after_new_reading(reading)
         return Response(serializer.data, status=status.HTTP_200_OK)

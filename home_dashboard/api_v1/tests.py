@@ -44,6 +44,7 @@ class RestMeterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'testmeter')
         self.assertContains(response, 'X')
+        self.assertContains(response, 'http://')
 
     def test_need_login_to_post_new_meter(self):
         """
@@ -208,6 +209,8 @@ class RestReadingTests(TestCase):
         self.assertContains(response, 'test reading')
         self.assertContains(response, '2001')
         self.assertContains(response, '100')
+        self.assertContains(response, 'meter_url')
+        self.assertContains(response, 'http://testserver/api/v1/meter/1')
 
     def test_login_cannot_add_new_reading(self):
         """
