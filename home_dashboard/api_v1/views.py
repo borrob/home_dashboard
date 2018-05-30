@@ -37,7 +37,7 @@ def meter_list(request): #pylint: disable=inconsistent-return-statements
 
 
 @api_view(['GET', 'PUT'])
-def meter_detail(request, id): #pylint: disable=inconsistent-return-statements
+def meter_detail(request, id): #pylint: disable=inconsistent-return-statements, redefined-builtin, invalid-name
     """
     Show details of a specific meter
 
@@ -94,7 +94,7 @@ def reading_list(request): #pylint: disable=inconsistent-return-statements
 
 
 @api_view(['GET', 'PUT'])
-def reading_detail(request, id): #pylint: disable=inconsistent-return-statements
+def reading_detail(request, id): #pylint: disable=inconsistent-return-statements, redefined-builtin, invalid-name
     """
     Show the details of a specific reading
 

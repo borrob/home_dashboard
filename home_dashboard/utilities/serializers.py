@@ -22,7 +22,11 @@ class ReadingSerializer(serializers.ModelSerializer):
     meter_url = serializers.SerializerMethodField()
 
     def get_meter_url(self, obj):
-        meter = MeterSerializer(Meter.objects.get(pk=obj.meter_id), context={'request': self.context.get('request')})
+        """
+        Get the url for the connected meter.
+        """
+        meter = MeterSerializer(Meter.objects.get(pk=obj.meter_id),
+                                context={'request': self.context.get('request')})
         return meter.data.get('url')
 
     class Meta:
@@ -37,11 +41,12 @@ class UsageSerialiser(serializers.ModelSerializer):
     meter_url = serializers.SerializerMethodField()
 
     def get_meter_url(self, obj):
-        meter = MeterSerializer(Meter.objects.get(pk=obj.meter_id), context={'request': self.context.get('request')})
+        """
+        Get the url for the connected meter.
+        """
+        meter = MeterSerializer(Meter.objects.get(pk=obj.meter_id),
+                                context={'request': self.context.get('request')})
         return meter.data.get('url')
-
-    def get_meter_id(self, obj):
-        return obj.meter
 
     class Meta:
         model = Usage
