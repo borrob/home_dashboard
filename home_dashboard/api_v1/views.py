@@ -1,16 +1,12 @@
 """
 Provides the views for the REST interface.
 """
-from django.db import IntegrityError
-from rest_framework import status, viewsets, permissions
-from rest_framework.decorators import api_view, action
-from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
-from rest_framework.response import Response
+from rest_framework import permissions, viewsets
 
-from utilities.models import Meter, Reading, update_usage_after_new_reading
+from utilities.models import Meter, Reading
 from utilities.serializers import MeterSerializer, ReadingSerializer
 
-class MeterViewSet(viewsets.ModelViewSet):
+class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
     Viewset for the meter model. Provides all the standard functions and checks permissions.
     """
@@ -19,7 +15,7 @@ class MeterViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.DjangoModelPermissions]
 
 
-class ReadingViewSet(viewsets.ModelViewSet):
+class ReadingViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
     Viewset for the Reading model. Provides all the standard functions and checks permissions. When
     a new reading is added (or updated), the new usage is calculated.

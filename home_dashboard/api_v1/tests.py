@@ -133,18 +133,18 @@ class RestMeterTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter_altered'})
         response = self.client.patch(url,
-                                   data,
-                                   follow=True,
-                                   content_type='application/json')
+                                     data,
+                                     follow=True,
+                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('testmeter_altered', str(response.content))
         self.assertIn('X', str(response.content))
 
         data = json.dumps({'meter_unit': 'Y'})
         response = self.client.patch(url,
-                                   data,
-                                   follow=True,
-                                   content_type='application/json')
+                                     data,
+                                     follow=True,
+                                     content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('testmeter_altered', str(response.content))
         self.assertIn('Y', str(response.content))
@@ -165,9 +165,9 @@ class RestMeterTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter'})
         response = self.client.patch(url,
-                                   data,
-                                   follow=True,
-                                   content_type='application/json')
+                                     data,
+                                     follow=True,
+                                     content_type='application/json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('already exists', str(response.content))
 
@@ -304,9 +304,9 @@ class RestReadingTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         data = {'reading': 500}
         response = self.client.patch(reverse('api_v1:reading-detail', args=[1]),
-                                   content_type='application/json',
-                                   follow=True,
-                                   data=json.dumps(data))
+                                     content_type='application/json',
+                                     follow=True,
+                                     data=json.dumps(data))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 500)
         self.assertContains(response, 2001)
