@@ -197,7 +197,7 @@ class RestReadingTests(TestCase):
         """
         The rest-interface should *not* be accessible for everyone.
         """
-        response = self.client.get(reverse('api_v1:reading_list'), follow=True)
+        response = self.client.get(reverse('api_v1:reading-list'), follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_login_can_see_readinglist(self):
@@ -205,7 +205,7 @@ class RestReadingTests(TestCase):
         Readinglist is available to logged in members.
         """
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.get(reverse('api_v1:reading_list'), follow=True)
+        response = self.client.get(reverse('api_v1:reading-list'), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'test reading')
         self.assertContains(response, '2001')
@@ -225,7 +225,7 @@ class RestReadingTests(TestCase):
             '  <meter>1</meter>' + \
             '  <remark>testnew</remark>' + \
             '</root>'
-        response = self.client.post(reverse('api_v1:reading_list'),
+        response = self.client.post(reverse('api_v1:reading-list'),
                                     data=data,
                                     content_type='application/xml',
                                     follow=True)
@@ -246,7 +246,7 @@ class RestReadingTests(TestCase):
             '  <meter>1</meter>' + \
             '  <remark>testnew</remark>' + \
             '</root>'
-        response = self.client.post(reverse('api_v1:reading_list'),
+        response = self.client.post(reverse('api_v1:reading-list'),
                                     data=data,
                                     content_type='application/xml',
                                     follow=True)
@@ -257,7 +257,7 @@ class RestReadingTests(TestCase):
         """
         Login is required to see the reading details
         """
-        response = self.client.get(reverse('api_v1:reading_details', args=[1]), follow=True)
+        response = self.client.get(reverse('api_v1:reading-detail', args=[1]), follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_login_can_see_reading_details(self):
@@ -265,7 +265,7 @@ class RestReadingTests(TestCase):
         With login reading details are available.
         """
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.get(reverse('api_v1:reading_details', args=[1]), follow=True)
+        response = self.client.get(reverse('api_v1:reading-detail', args=[1]), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'test reading')
         self.assertContains(response, '2001')
@@ -276,7 +276,7 @@ class RestReadingTests(TestCase):
         Not anyone can change reading details.
         """
         data = {'reading': 500}
-        response = self.client.put(reverse('api_v1:reading_details', args=[1]),
+        response = self.client.put(reverse('api_v1:reading-detail', args=[1]),
                                    content_type='application/json',
                                    follow=True,
                                    data=json.dumps(data))
@@ -288,7 +288,7 @@ class RestReadingTests(TestCase):
         """
         self.client.login(username='testuser', password='q2w3E$R%')
         data = {'reading': 500}
-        response = self.client.put(reverse('api_v1:reading_details', args=[1]),
+        response = self.client.put(reverse('api_v1:reading-detail', args=[1]),
                                    content_type='application/json',
                                    follow=True,
                                    data=json.dumps(data))
@@ -303,7 +303,7 @@ class RestReadingTests(TestCase):
         self.user.save()
         self.client.login(username='testuser', password='q2w3E$R%')
         data = {'reading': 500}
-        response = self.client.put(reverse('api_v1:reading_details', args=[1]),
+        response = self.client.patch(reverse('api_v1:reading-detail', args=[1]),
                                    content_type='application/json',
                                    follow=True,
                                    data=json.dumps(data))
@@ -324,7 +324,7 @@ class RestReadingTests(TestCase):
             '  <meter>1</meter>' + \
             '  <remark>testnew</remark>' + \
             '</root>'
-        response = self.client.post(reverse('api_v1:reading_list'),
+        response = self.client.post(reverse('api_v1:reading-list'),
                                     data=data,
                                     content_type='application/xml',
                                     follow=True)
@@ -346,7 +346,7 @@ class RestReadingTests(TestCase):
                '  <meter>1</meter>' + \
                '  <remark>testnew</remark>' + \
                '</root>'
-        response = self.client.post(reverse('api_v1:reading_list'),
+        response = self.client.post(reverse('api_v1:reading-list'),
                                     data=data,
                                     content_type='application/xml',
                                     follow=True)

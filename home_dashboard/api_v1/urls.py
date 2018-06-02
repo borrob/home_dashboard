@@ -12,10 +12,9 @@ app_name = 'api_v1'
 
 router = DefaultRouter()
 router.register(r'meter', views.MeterViewSet)
+router.register(r'reading', views.ReadingViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
-     path('readings', views.reading_list, name='reading_list'),
-     path('reading/<int:id>', views.reading_detail, name='reading_details')
 ]
 
