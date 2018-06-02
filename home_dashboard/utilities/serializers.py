@@ -9,7 +9,7 @@ class MeterSerializer(serializers.HyperlinkedModelSerializer):
     """
     Provide a serializer for the Meter model.
     """
-    url = serializers.HyperlinkedIdentityField(view_name='api_v1:meter_details', lookup_field='id')
+    url = serializers.HyperlinkedIdentityField(view_name='api_v1:meter-detail')
 
     class Meta:
         model = Meter

@@ -30,7 +30,7 @@ class RestMeterTests(TestCase):
         """
         The rest-interface should *not* be accessible for everyone.
         """
-        response = self.client.get(reverse('api_v1:meter_list'), follow=True)
+        response = self.client.get(reverse('api_v1:meter-list'), follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_login_can_see_meterlist(self):
@@ -40,7 +40,7 @@ class RestMeterTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
         meter.save()
-        response = self.client.get(reverse('api_v1:meter_list'), follow=True)
+        response = self.client.get(reverse('api_v1:meter-list'), follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'testmeter')
         self.assertContains(response, 'X')
@@ -51,7 +51,7 @@ class RestMeterTests(TestCase):
         The rest interface should *not* allow anyone to add new data.
         """
         data = {'meter_name': 'test', 'meter_unit': 'X'}
-        response = self.client.post(reverse('api_v1:meter_list'), data=data, follow=True)
+        response = self.client.post(reverse('api_v1:meter-list'), data=data, follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_login_to_post_new_meter(self):
@@ -60,7 +60,7 @@ class RestMeterTests(TestCase):
         """
         self.client.login(username='testuser', password='q2w3E$R%')
         data = {'meter_name': 'test', 'meter_unit': 'X'}
-        response = self.client.post(reverse('api_v1:meter_list'), data=data, follow=True)
+        response = self.client.post(reverse('api_v1:meter-list'), data=data, follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_special_login_to_post_new_meter(self):
@@ -71,7 +71,7 @@ class RestMeterTests(TestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter', 'meter_unit': 'X'})
-        response = self.client.post(reverse('api_v1:meter_list'),
+        response = self.client.post(reverse('api_v1:meter-list'),
                                     data,
                                     follow=True,
                                     content_type='application/json')
@@ -87,11 +87,11 @@ class RestMeterTests(TestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'test', 'meter_unit': 'X'})
-        response1 = self.client.post(reverse('api_v1:meter_list'),
+        response1 = self.client.post(reverse('api_v1:meter-list'),
                                      data,
                                      follow=True,
                                      content_type='application/json')
-        response2 = self.client.post(reverse('api_v1:meter_list'),
+        response2 = self.client.post(reverse('api_v1:meter-list'),
                                      data,
                                      follow=True,
                                      content_type='application/json')
@@ -102,7 +102,7 @@ class RestMeterTests(TestCase):
         """
         The rest-interface should *not* be accessible for everyone.
         """
-        url = reverse('api_v1:meter_details', args=[1])
+        url = reverse('api_v1:meter-detail', args=[1])
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 403)
 
@@ -113,7 +113,7 @@ class RestMeterTests(TestCase):
         meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
         meter.save()
         self.client.login(username='testuser', password='q2w3E$R%')
-        url = reverse('api_v1:meter_details', args=[1])
+        url = reverse('api_v1:meter-detail', args=[1])
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'testmeter')
@@ -129,10 +129,10 @@ class RestMeterTests(TestCase):
         p = Permission.objects.get(name='Can change meter')
         self.user.user_permissions.add(p)
 
-        url = reverse('api_v1:meter_details', args=[1])
+        url = reverse('api_v1:meter-detail', kwargs={'pk':1})
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter_altered'})
-        response = self.client.put(url,
+        response = self.client.patch(url,
                                    data,
                                    follow=True,
                                    content_type='application/json')
@@ -141,7 +141,7 @@ class RestMeterTests(TestCase):
         self.assertIn('X', str(response.content))
 
         data = json.dumps({'meter_unit': 'Y'})
-        response = self.client.put(url,
+        response = self.client.patch(url,
                                    data,
                                    follow=True,
                                    content_type='application/json')
@@ -161,14 +161,15 @@ class RestMeterTests(TestCase):
         p = Permission.objects.get(name='Can change meter')
         self.user.user_permissions.add(p)
 
-        url = reverse('api_v1:meter_details', args=[2])
+        url = reverse('api_v1:meter-detail', kwargs={'pk':2})
         self.client.login(username='testuser', password='q2w3E$R%')
         data = json.dumps({'meter_name': 'testmeter'})
-        response = self.client.put(url,
+        response = self.client.patch(url,
                                    data,
                                    follow=True,
                                    content_type='application/json')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('already exists', str(response.content))
 
 
 class RestReadingTests(TestCase):
