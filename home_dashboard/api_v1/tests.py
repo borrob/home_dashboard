@@ -352,3 +352,91 @@ class RestReadingTests(TestCase):
                                     follow=True)
 
         self.assertEqual(response.status_code, 400)
+
+
+class RestUsageTests(TestCase):
+    """
+    Run all tests for the Usage class rest interface.
+    """
+
+    # pylint: disable=invalid-name
+
+    def setUp(self):
+        """
+        Setup a test user for login.
+        """
+        self.client = Client()
+        self.user = User.objects.create_user('testuser', 'test@user.com', 'q2w3E$R%')
+        self.meter = Meter.objects.create(meter_name='testmeter', meter_unit='X')
+        self.meter.save()
+        reading = Reading.objects.create(meter=self.meter,
+                                         reading=100,
+                                         date=datetime.strptime('2001-01-01', '%Y-%m-%d').date(),
+                                         remark='test reading')
+        reading.save()
+        usage = Usage.objects.create(month=1,
+                                     year=2018,
+                                     meter=self.meter,
+                                     usage=1234)
+        usage.save()
+
+    def test_need_login_to_see_usagelist(self):
+        """
+        The rest-interface should *not* be accessible for everyone.
+        """
+        response = self.client.get(reverse('api_v1:usage-list'), follow=True)
+        self.assertEqual(response.status_code, 403)
+
+    def test_login_can_see_usagelist(self):
+        """
+        Usagelist is available to logged in members.
+        """
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('api_v1:usage-list'), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '1234')
+        self.assertContains(response, '2018')
+        self.assertContains(response, 'meter_url')
+        self.assertContains(response, 'http://testserver/api/v1/meter/1')
+
+    def test_cannot_add_usage(self):
+        """
+        The usage cannot be added via the rest interface.
+        """
+        p = Permission.objects.get(name='Can add usage')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = {'month': 2, 'year': 2018, 'meter': 1, 'usage': 789}
+        response = self.client.post(reverse('api_v1:reading-list'),
+                                    data=json.dumps(data),
+                                    content_type='application/json',
+                                    follow=True)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('You do not have permission', str(response.content))
+
+    def test_cannot_change_usage(self):
+        """
+        The usage cannot be changed via the rest interface.
+        """
+        p = Permission.objects.get(name='Can change usage')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        data = {'month': 2}
+        response = self.client.patch(reverse('api_v1:usage-detail', kwargs={'pk': 1}),
+                                     data=json.dumps(data),
+                                     content_type='application/json',
+                                     follow=True)
+        self.assertEqual(response.status_code, 405)
+        self.assertIn('not allowed', str(response.content))
+
+    def test_cannot_delete_usage(self):
+        """
+        The usage cannot be changed via the rest interface.
+        """
+        p = Permission.objects.get(name='Can delete usage')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.delete(reverse('api_v1:usage-detail', kwargs={'pk': 1}),
+                                      follow=True)
+        self.assertEqual(response.status_code, 405)
+        self.assertIn('not allowed', str(response.content))

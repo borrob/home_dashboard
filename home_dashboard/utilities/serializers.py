@@ -34,7 +34,7 @@ class ReadingSerializer(serializers.ModelSerializer):
         fields = ('id', 'date', 'reading', 'meter', 'meter_url', 'remark')
 
 
-class UsageSerialiser(serializers.ModelSerializer):
+class UsageSerializer(serializers.ModelSerializer):
     """
     Provide a serializer for the Usage model.
     """

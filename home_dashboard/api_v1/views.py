@@ -3,8 +3,8 @@ Provides the views for the REST interface.
 """
 from rest_framework import permissions, viewsets
 
-from utilities.models import Meter, Reading
-from utilities.serializers import MeterSerializer, ReadingSerializer
+from utilities.models import Meter, Reading, Usage
+from utilities.serializers import MeterSerializer, ReadingSerializer, UsageSerializer
 
 class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
@@ -24,3 +24,13 @@ class ReadingViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestor
     serializer_class = ReadingSerializer
     permission_classes = [permissions.DjangoModelPermissions]
     #TODO: return all reading for a specific meter
+
+
+class UsageViewSet(viewsets.ReadOnlyModelViewSet): # pylint: disable=too-many-ancestors
+    """
+    Viewset for the usage model. Only readonly actions are providec.
+    """
+    queryset = Usage.objects.all()
+    serializer_class = UsageSerializer
+    permission_classes = [permissions.DjangoModelPermissions]
+#TODO: add filters
