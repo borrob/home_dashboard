@@ -2,9 +2,12 @@
 Provides the views for the REST interface.
 """
 from rest_framework import permissions, viewsets
+from django_filters import rest_framework as filters
 
 from utilities.models import Meter, Reading, Usage
 from utilities.serializers import MeterSerializer, ReadingSerializer, UsageSerializer
+
+from .filters import MeterFilter, ReadingFilter, UsageFilter
 
 class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
@@ -13,6 +16,8 @@ class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     queryset = Meter.objects.all()
     serializer_class = MeterSerializer
     permission_classes = [permissions.DjangoModelPermissions]
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_class = MeterFilter
 
 
 class ReadingViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
@@ -23,14 +28,16 @@ class ReadingViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestor
     queryset = Reading.objects.all()
     serializer_class = ReadingSerializer
     permission_classes = [permissions.DjangoModelPermissions]
-    #TODO: return all reading for a specific meter
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_class = ReadingFilter
 
 
 class UsageViewSet(viewsets.ReadOnlyModelViewSet): # pylint: disable=too-many-ancestors
     """
-    Viewset for the usage model. Only readonly actions are providec.
+    Viewset for the usage model. Only readonly actions are provided.
     """
     queryset = Usage.objects.all()
     serializer_class = UsageSerializer
     permission_classes = [permissions.DjangoModelPermissions]
-#TODO: add filters
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_class = UsageFilter
