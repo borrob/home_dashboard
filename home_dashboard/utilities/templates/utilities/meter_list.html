@@ -4,45 +4,76 @@
 
     <main role="main" class="container">
 
-		<div class="card">
-			<table class="table table-hover">
-				<thead>
-					<th></th>
-					<th>Meter name</th>
-					<th>Unit</th>
-          <th></th>
-				</thead>
-				<tbody>
-					{% for m in object_list %}
-          <tr>
-					    <td>{{ m.pk }}.</td>
-					    <td>{{ m.meter_name }}</td>
-					    <td>{{ m.meter_unit }}</td>
-              {% if perms.utilities.change_meter %}
-                <td><a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">edit</a></td>
-              {% else %}
-                <td></td>
-              {% endif %}
-          </tr>
-					{% empty %}
-                    <tr>
-					    <td colspan=4>No meters yet</td>
-					{% endfor %}
-                    </tr>
-				</tbody>
-			</table>
-		</div>
+        <div class="card">
+            <table class="table table-hover" id='table-meter-rest'>
+                <thead>
+                    <th></th>
+                    <th>Meter name</th>
+                    <th>Unit</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
 
-		{% if perms.utilities.add_meter %}
-			{% include 'utilities/snippets/add_meter_modal.html' %}
-		{% endif %}
-		{% if perms.utilities.delete_meter %}
-			{% include 'utilities/snippets/delete_meter_modal.html' %}
-		{% endif %}
+        {% if perms.utilities.add_meter %}
+            {% include 'utilities/snippets/add_meter_modal.html' %}
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newMeterModal">
+              Add new Meter
+            </button>
+        {% endif %}
+        {% if perms.utilities.delete_meter %}
+            {% include 'utilities/snippets/delete_meter_modal.html' %}
+        {% endif %}
     {% if perms.utilities.change_meter %}
       {% include 'utilities/snippets/edit_meter_modal.html' %}
     {% endif %}
 
     </main>
 
+{% endblock %}
+
+{% block script %}
+    <script>
+        const ADD = {{ perms.utilities.add_meter_modal|lower }};
+        const CHANGE = {{ perms.utilities.change_meter|lower }};
+        const DELETE = {{ perms.utilities.delete_meter|lower }};
+        const METERURL = '/api/v1/meter?format=json';
+        const INPUTNAMEDELETE = '#meterNameInputDelete';
+        const DELETEMODALNAME = '#deleteMeterModal';
+
+        function delMeter(name) {
+            $(INPUTNAMEDELETE).val(name);
+            $(DELETEMODALNAME).modal('show');
+        }
+
+        function buildMetertable(data) {
+            if (data == null || data == '') {
+                $('#table-meter-rest > tbody:last')
+                    .append('<tr><td colspace=4>No ' +
+                            'meters yet</td></tr>');
+                }
+            $.each(data, (i, item) => {
+                let edit = CHANGE ? ' <a onclick="editmeter(\'' + item.meter_name + '\', \'' + item.meter_unit + '\')">edit</a>' : '';
+                let del = DELETE ? ' <a onclick="delMeter(\'' + item.meter_name + '\')">delete</a>' : '';
+                $('#table-meter-rest > tbody:last')
+                    .append('<tr>' +
+                        '<td>' + item.id+'.</td>'+
+                        '<td>' + item.meter_name+ '</td>'+
+                        '<td>' + item.meter_unit+ '</td>' +
+                        '<td>' + edit + del + '</td>' +
+                        '</tr>');
+            });
+        }
+
+        $(document).ready(() => {
+            $.ajax({
+                url: METERURL
+            }).then((data) => {
+                let results = data.results;
+                buildMetertable(results);
+                });
+        });
+    </script>
 {% endblock %}
