@@ -12,7 +12,7 @@ from django.shortcuts import render, redirect, reverse
 
 from .models import Meter, Reading, Usage, update_usage_after_new_reading
 
-# Create your views here.
+
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
     """
     Show a list of all the meters.
@@ -174,8 +174,13 @@ def list_readings(request):
     """
     try:
         readings = Reading.objects.all()
-        if request.GET.get('m_id'):
-            readings = readings.filter(meter_id=request.GET.get('m_id'))
+        if request.GET.get('m_id') or request.session.get('show_meter'):
+            meter_filter = int(request.GET.get('m_id', request.session.get('show_meter')))
+            if meter_filter >= 0:
+                request.session['show_meter']=meter_filter
+                readings = readings.filter(meter_id=meter_filter)
+            else:
+                request.session['show_meter']=None
     except Reading.DoesNotExist:
         pass
 

@@ -9,7 +9,7 @@
             <div class="row">
                 <div class="col">
                     <div class="btn-group" role="group">
-                        <a href="{% url 'utilities:reading_list' %}" class="btn btn-secondary" id="meter_all">All</a>
+                        <a href="{% url 'utilities:reading_list' %}?m_id=-1" class="btn btn-secondary" id="meter_all">All</a>
                         {% for m in meters %}
                             <a href="{% url 'utilities:reading_list' %}?m_id={{ m.id }}" class="btn btn-secondary" id="meter_{{m.id}}">{{ m.meter_name }}</a>
                         {% endfor %}
@@ -61,8 +61,8 @@
 
 {% block script %}
         <script>
-            {% if request.GET.m_id %}
-                var active_meter = {{ request.GET.m_id }};
+            {% if request.session and request.session.show_meter %}
+                var active_meter = {{ request.session.show_meter }};
                 $('#meter_' + active_meter ).removeClass('btn-secondary').addClass('btn-primary');
             {% else %}
                 $('#meter_all').removeClass('btn-secondary').addClass('btn-primary');
