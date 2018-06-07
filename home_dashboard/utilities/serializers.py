@@ -20,6 +20,7 @@ class ReadingSerializer(serializers.ModelSerializer):
     Provide a serializer for the Reading model.
     """
     meter_url = serializers.SerializerMethodField()
+    meter_unit = serializers.SerializerMethodField()
 
     def get_meter_url(self, obj):
         """
@@ -29,9 +30,16 @@ class ReadingSerializer(serializers.ModelSerializer):
                                 context={'request': self.context.get('request')})
         return meter.data.get('url')
 
+    def get_meter_unit(self, obj):
+        """
+        Get the appropiate unit of the meter.
+        """
+        meter = Meter.objects.get(pk=obj.meter_id)
+        return meter.meter_unit
+
     class Meta:
         model = Reading
-        fields = ('id', 'date', 'reading', 'meter', 'meter_url', 'remark')
+        fields = ('id', 'date', 'reading', 'meter', 'meter_url', 'meter_unit', 'remark')
 
 
 class UsageSerializer(serializers.ModelSerializer):
