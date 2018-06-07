@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block main %}
 
@@ -19,7 +20,7 @@
 					    <td>{{ m.meter_name }}</td>
 					    <td>{{ m.meter_unit }}</td>
               {% if perms.utilities.change_meter %}
-                <td><a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">edit</a></td>
+                <td><a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"</a></td>
               {% else %}
                 <td></td>
               {% endif %}
@@ -39,9 +40,9 @@
 		{% if perms.utilities.delete_meter %}
 			{% include 'utilities/snippets/delete_meter_modal.html' %}
 		{% endif %}
-    {% if perms.utilities.change_meter %}
-      {% include 'utilities/snippets/edit_meter_modal.html' %}
-    {% endif %}
+        {% if perms.utilities.change_meter %}
+          {% include 'utilities/snippets/edit_meter_modal.html' %}
+        {% endif %}
 
     </main>
 
