@@ -30,7 +30,8 @@ class ReadingSerializer(serializers.ModelSerializer):
                                 context={'request': self.context.get('request')})
         return meter.data.get('url')
 
-    def get_meter_unit(self, obj):
+    @staticmethod
+    def get_meter_unit(obj):
         """
         Get the appropiate unit of the meter.
         """
