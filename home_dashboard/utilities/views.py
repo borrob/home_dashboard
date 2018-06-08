@@ -7,12 +7,13 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.datastructures import MultiValueDictKeyError
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
 from .models import Meter, Reading, Usage, update_usage_after_new_reading
 
-# Create your views here.
+#METER
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
     """
     Show a list of all the meters.
@@ -23,6 +24,31 @@ class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-ma
     """
     model = Meter
     template = 'utilities/meter_list.html'
+
+    def get_queryset(self):
+        """
+        Get the sorted queryset.
+
+        The set is sorted on the field the user is requesting (with the 'sort_by' url
+        parameter), or if that is not available the column stored in the session, or
+        otherwise the ID field as default.
+
+        Takes care of sorting asc/desc.
+
+        :return: the sorted meter queryset
+        """
+        #Get the sort_key from the session
+        sort_key = self.request.session.get('meterlist_sort_by')
+        #Override with the sort_key that the user iq requesting.
+        try:
+            sort_key_request = self.request.GET['sort_by']
+            sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+        except MultiValueDictKeyError:
+            sort_key = sort_key if sort_key else 'id'
+
+        self.request.session['meterlist_sort_by'] = sort_key
+        queryset = Meter.objects.order_by(sort_key)
+        return queryset
 
 @permission_required('utilities.add_meter')
 def add_meter(request):
@@ -166,6 +192,7 @@ def edit_meter(request):
                          'alert-success')
     return redirect(reverse('utilities:meter_list'))
 
+#READINGS
 @login_required
 def list_readings(request):
     """
