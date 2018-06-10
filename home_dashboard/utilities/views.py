@@ -29,6 +29,8 @@ class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-ma
 def add_meter(request):
     """
     Add a meter.
+
+    DEPRECATED
     """
     try:
         meter_name = request.POST.get('meter_name')
@@ -71,6 +73,8 @@ def add_meter(request):
 def delete_meter(request):
     """
     Delete a meter
+
+    DEPRECATED
     """
     try:
         meter_name = request.POST.get('meter_name')
@@ -116,6 +120,8 @@ def delete_meter(request):
 def edit_meter(request):
     """
     Edit a meter.
+
+    DEPRECATED
     """
     try:
         meter_name = request.POST.get('meter_name')

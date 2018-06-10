@@ -1,4 +1,31 @@
-<!-- Button trigger modal -->
+<script>
+    function formToJson(html_id){
+        let tmp = $('#' + html_id).serializeArray();
+        let output = {};
+        tmp.map((x) => {output[x.name] = x.value});
+        return JSON.stringify(output);
+    }
+
+    function sendMeterInputForm(){
+        let csrf = getCookie('csrftoken');
+        let data = formToJson('meterModalInputForm');
+        $.ajax({
+            url: METERURL,
+            method: 'POST',
+            headers: {'X-CSRFToken': csrf, 'content-type': 'application/json'},
+            data: data,
+            dataType: 'json'
+        }).done((data) => {
+            $('#newMeterModal').modal('hide');
+            getMeters('id'); //update the current meter list
+            writeMessage('New meter ' + data.meter_name + ' added', 'alert-success');
+        }).fail((data) => {
+            $('#newMeterModal').modal('hide');
+            getMeters('id'); //update the current meter list
+            writeMessage('Could not add new meter.', 'alert-danger');
+        });
+    }
+</script>
 
 <!-- Modal -->
 <div class="modal fade" id="newMeterModal" tabindex="-1" role="dialog" aria-labelledby="newMeterModalLabel" aria-hidden="true">
@@ -10,27 +37,28 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-	  <form action="{% url 'utilities:add_meter' %}" method='post'>
-	  {% csrf_token %}
-      <div class="modal-body">
-		<div class="form-group row">
-			<label for="meterNameInput" class="col-sm-3 col-form-label">Meter name</label>
-			<div class='col-sm-9'>
-				<input type='text' id='meterNameInput' class="form-control" name='meter_name' placeholder='meter name'/>
-			</div>
-		</div>
-		<div class="form-group row">
-			<label for="meterUnitInput" class="col-sm-3 col-form-label">Meter unit</label>
-			<div class='col-sm-9'>
-				<input type='text' id='meterUnitInput' class="form-control" name='unit_name' placeholder='unit'/>
-			</div>
-		</div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
+	  <form onsubmit="sendMeterInputForm(); return false;" action='' method='post' id='meterModalInputForm'>
+      {% csrf_token %}
+        <div class="modal-body">
+	      <div class="form-group row">
+	      	<label for="meterNameInput" class="col-sm-3 col-form-label">Meter name</label>
+	      	<div class='col-sm-9'>
+	      		<input type='text' id='meterNameInput' class="form-control" name='meter_name' placeholder='meter name'/>
+	      	</div>
+	      </div>
+	      <div class="form-group row">
+	      	<label for="meterUnitInput" class="col-sm-3 col-form-label">Meter unit</label>
+	      	<div class='col-sm-9'>
+	      		<input type='text' id='meterUnitInput' class="form-control" name='meter_unit' placeholder='unit'/>
+	      	</div>
+	      </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
 	  </form>
     </div>
   </div>
 </div>
+

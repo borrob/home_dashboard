@@ -13,6 +13,7 @@ class MeterFilter(filters.FilterSet):
     class Meta:
         model = Meter
         fields = ['meter_name', 'meter_unit']
+        ordering_fields = '__all__'
 
 
 class ReadingFilter(filters.FilterSet):

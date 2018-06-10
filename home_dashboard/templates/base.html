@@ -13,6 +13,30 @@
     <!-- Bootstrap core CSS -->
     <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap_override.css' %}" rel="stylesheet">
+  <script src="{% static 'jquery/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = $.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function writeMessage(mes, extratags=''){
+        let htmlstring = '<div class="alert ' + extratags + ' alert-dismissible fade show" role="alert"><p>' + mes + '</p><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+        $('main').before(htmlstring);
+    }
+  </script>
 
   </head>
 
@@ -20,9 +44,6 @@
 
   {% block main %}
   {% endblock %}
-
-  <script src="{% static 'jquery/jquery-3.3.1.min.js' %}"></script>
-  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
   {% block script %}
   {% endblock %}

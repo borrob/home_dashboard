@@ -1,3 +1,40 @@
+<script>
+    var editmeter = function(id, name, unitname){
+      $('#editoldMeterId').val(id);
+      $('#editmeterNameInput').val(name);
+      $('#editmeterUnitInput').val(unitname);
+      $('#editMeterModal').modal('show');
+    };
+
+    function formToJson(html_id){
+        let tmp = $('#' + html_id).serializeArray();
+        let output = {};
+        tmp.map((x) => {output[x.name] = x.value});
+        return JSON.stringify(output);
+    }
+
+    function sendMeterEditForm(){
+        let csrf = getCookie('csrftoken');
+        let data = formToJson('meterModalEditForm');
+        let meter_to_change = $('#editoldMeterId').val();
+        $.ajax({
+            url: METERURL + '/' + meter_to_change + '/',
+            method: 'PUT',
+            headers: {'X-CSRFToken': csrf, 'content-type': 'application/json'},
+            data: data,
+            dataType: 'json'
+        }).done((data) => {
+            $('#editMeterModal').modal('hide');
+            getMeters('id'); //update the current meter list
+            writeMessage('Meter ' + data.meter_name + ' successfully changed', 'alert-success');
+        }).fail((data) => {
+            $('#editMeterModal').modal('hide');
+            getMeters('id'); //update the current meter list
+            writeMessage('Could not change meter.', 'alert-danger');
+        });
+    }
+</script>
+
 <!-- Modal -->
 <div class="modal fade" id="editMeterModal" tabindex="-1" role="dialog" aria-labelledby="editMeterModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
@@ -8,20 +45,19 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-	  <form action="{% url 'utilities:edit_meter' %}" method='post'>
-	  {% csrf_token %}
+	  <form onsubmit="sendMeterEditForm(); return false;" id='meterModalEditForm'>
       <div class="modal-body">
-        <input type="hidden" name="meter_name" id="editoldMeterName" />
+        <input type="hidden" name="id" id="editoldMeterId" />
 		<div class="form-group row">
 			<label for="editmeterNameInput" class="col-sm-3 col-form-label">Meter name</label>
 			<div class='col-sm-9'>
-				<input type='text' id='editmeterNameInput' class="form-control" name='new_name'/>
+				<input type='text' id='editmeterNameInput' class="form-control" name='meter_name'/>
 			</div>
 		</div>
 		<div class="form-group row">
 			<label for="editmeterUnitInput" class="col-sm-3 col-form-label">Meter unit</label>
 			<div class='col-sm-9'>
-				<input type='text' id='editmeterUnitInput' class="form-control" name='unit_name'/>
+				<input type='text' id='editmeterUnitInput' class="form-control" name='meter_unit'/>
 			</div>
 		</div>
       </div>
@@ -33,12 +69,3 @@
     </div>
   </div>
 </div>
-
-<script>
-var editmeter = function(name, unitname){
-  $('#editoldMeterName').val(name);
-  $('#editmeterNameInput').val(name);
-  $('#editmeterUnitInput').val(unitname);
-  $('#editMeterModal').modal();
-};
-</script>

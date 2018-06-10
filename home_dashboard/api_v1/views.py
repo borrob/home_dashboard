@@ -3,6 +3,7 @@ Provides the views for the REST interface.
 """
 from rest_framework import permissions, viewsets
 from django_filters import rest_framework as filters
+from rest_framework.filters import OrderingFilter
 
 from utilities.models import Meter, Reading, Usage
 from utilities.serializers import MeterSerializer, ReadingSerializer, UsageSerializer
@@ -15,8 +16,8 @@ class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
     queryset = Meter.objects.all()
     serializer_class = MeterSerializer
-    permission_classes = [permissions.DjangoModelPermissions]
-    filter_backends = (filters.DjangoFilterBackend,)
+    permission_classes = [permissions.DjangoObjectPermissions, permissions.DjangoModelPermissions]
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filter_class = MeterFilter
 
 
