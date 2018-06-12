@@ -203,10 +203,22 @@ def list_readings(request):
     except Reading.DoesNotExist:
         pass
 
+    #Get the sort_key from the session
+    sort_key = request.session.get('readinglist_sort_by')
+    #Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
+
+    request.session['readinglist_sort_by'] = sort_key
+    readings = readings.order_by(sort_key)
+
     meters = Meter.objects.all()
     return render(request,
                   'utilities/reading_list.html',
-                  {'object_list': readings,
+                  {'readings': readings,
                    'meters': meters})
 
 @permission_required('utilities.add_reading')
