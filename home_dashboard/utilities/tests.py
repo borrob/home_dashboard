@@ -109,12 +109,12 @@ class MeterViewTests(TestCase):
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         try:
-            meter = Meter.objects.get(meter_name='testmeter')
+            Meter.objects.get(meter_name='testmeter')
         except Meter.DoesNotExist:
             #OK!
             pass
         else:
-            self.assertFail('There should NOT be a testmeter.')
+            self.assertEqual('a', 'b', 'There should NOT be a testmeter.')
 
     def test_change_meter(self):
         """
@@ -182,7 +182,7 @@ class MeterViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         try:
             testmeter = Meter.objects.get(meter_name='testmeter')
-        except:
+        except Meter.DoesNotExist:
             testmeter = ''
         self.assertEqual(testmeter.meter_name, 'testmeter') #check via DB if metername didn't change
 

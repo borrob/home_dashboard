@@ -2,8 +2,8 @@
 Provides the views for the REST interface.
 """
 from rest_framework import permissions, viewsets
-from django_filters import rest_framework as filters
 from rest_framework.filters import OrderingFilter
+from django_filters import rest_framework as filters
 
 from utilities.models import Meter, Reading, Usage
 from utilities.serializers import MeterSerializer, ReadingSerializer, UsageSerializer

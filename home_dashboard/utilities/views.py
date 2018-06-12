@@ -7,7 +7,6 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.utils.datastructures import MultiValueDictKeyError
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
@@ -185,10 +184,10 @@ def list_readings(request):
         if request.GET.get('m_id') or request.session.get('show_meter'):
             meter_filter = int(request.GET.get('m_id', request.session.get('show_meter')))
             if meter_filter >= 0:
-                request.session['show_meter']=meter_filter
+                request.session['show_meter'] = meter_filter
                 readings = readings.filter(meter_id=meter_filter)
             else:
-                request.session['show_meter']=None
+                request.session['show_meter'] = None
     except Reading.DoesNotExist:
         pass
 
