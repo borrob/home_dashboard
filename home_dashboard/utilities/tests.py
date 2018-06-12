@@ -46,7 +46,6 @@ class MeterViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.get(reverse('utilities:meter_list'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No meters yet")
 
     def test_add_meter(self):
         """
@@ -109,8 +108,13 @@ class MeterViewTests(TestCase):
                                     data={'meter_name': 'testmeter'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No meters yet")
-        self.assertContains(response, "testmeter is deleted")
+        try:
+            meter = Meter.objects.get(meter_name='testmeter')
+        except Meter.DoesNotExist:
+            #OK!
+            pass
+        else:
+            self.assertFail('There should NOT be a testmeter.')
 
     def test_change_meter(self):
         """
@@ -176,8 +180,11 @@ class MeterViewTests(TestCase):
                                           'new_name': 'nametaken'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "testmeter")
-        self.assertContains(response, "Name is already taken")
+        try:
+            testmeter = Meter.objects.get(meter_name='testmeter')
+        except:
+            testmeter = ''
+        self.assertEqual(testmeter.meter_name, 'testmeter') #check via DB if metername didn't change
 
 class ReadingViewTests(TestCase):
     """

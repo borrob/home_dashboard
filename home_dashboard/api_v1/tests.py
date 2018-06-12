@@ -128,13 +128,12 @@ class RestMeterTests(TestCase):
 
         p = Permission.objects.get(name='Can change meter')
         self.user.user_permissions.add(p)
-
-        url = reverse('api_v1:meter-detail', kwargs={'pk':1})
         self.client.login(username='testuser', password='q2w3E$R%')
+
         data = json.dumps({'meter_name': 'testmeter_altered'})
+        url = reverse('api_v1:meter-detail', kwargs={'pk':1})
         response = self.client.patch(url,
                                      data,
-                                     follow=True,
                                      content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('testmeter_altered', str(response.content))
@@ -143,7 +142,6 @@ class RestMeterTests(TestCase):
         data = json.dumps({'meter_unit': 'Y'})
         response = self.client.patch(url,
                                      data,
-                                     follow=True,
                                      content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertIn('testmeter_altered', str(response.content))

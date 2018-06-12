@@ -16,7 +16,7 @@ class MeterViewSet(viewsets.ModelViewSet): # pylint: disable=too-many-ancestors
     """
     queryset = Meter.objects.all()
     serializer_class = MeterSerializer
-    permission_classes = [permissions.DjangoObjectPermissions, permissions.DjangoModelPermissions]
+    permission_classes = [permissions.DjangoModelPermissions]
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filter_class = MeterFilter
 
