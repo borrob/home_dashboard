@@ -1,6 +1,6 @@
 image: https://github.com/docker-library/python/blob/b99b66406ebe728fb4da64548066ad0be6582e08/3.6/stretch/Dockerfile
 
-stage:
+stages:
     - test
 
 test:
