@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
 from django.utils.datastructures import MultiValueDictKeyError
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
@@ -73,23 +74,19 @@ def add_meter(request):
         return redirect(reverse('utilities:meter_list'))
 
     try:
-        Meter.objects.get(meter_name=meter_name)
-    except Meter.DoesNotExist:
-        #meter doesn't exist -> OK!
-        pass
-    else:
+        new_meter = Meter.objects.create(meter_name=meter_name, meter_unit=meter_unit)
+        new_meter.save()
+    except IntegrityError:
         messages.add_message(request,
                              messages.ERROR,
                              'Meter already exists. Cannot add a double entry.',
                              'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
+    else:
+        messages.add_message(request,
+                             messages.INFO,
+                             'Meter {0} is added.'.format(new_meter.meter_name),
+                             'alert-success')
 
-    new_meter = Meter.objects.create(meter_name=meter_name, meter_unit=meter_unit)
-    new_meter.save()
-    messages.add_message(request,
-                         messages.INFO,
-                         'Meter {0} is added.'.format(new_meter.meter_name),
-                         'alert-success')
     return redirect(reverse('utilities:meter_list'))
 
 @permission_required('utilities.delete_meter')

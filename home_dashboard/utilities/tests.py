@@ -4,7 +4,7 @@ Testing of all the classes and endpoints for the utilities app.
 import datetime
 from django.contrib.auth.models import User, Permission
 from django.db import IntegrityError
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .exceptions import MeterError
@@ -14,7 +14,7 @@ from .models import update_usage_after_new_reading
 
 # Create your tests here.
 
-class MeterViewTests(TestCase):
+class MeterViewTests(TransactionTestCase):
     """
     Test the functionality of the Meter endpoint.
 
@@ -74,6 +74,27 @@ class MeterViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
         self.assertContains(response, 'testmeter')
+
+    def test_add_meter_with_same_name(self):
+        """
+        Test cannot add second meter with same name.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "No meters yet")
+        self.assertContains(response, 'testmeter')
+        response = self.client.post(reverse('utilities:add_meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Meter already exists.')
 
     def test_remove_meter(self):
         """
