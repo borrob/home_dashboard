@@ -18,14 +18,14 @@
             </div>
 			<table class="table table-hover">
 				<thead>
-                    <th>Year</th>
-                    <th>Month</th>
-					<th>Meter name</th>
-                    <th>Usage</th>
-					<th>Unit</th>
+                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=date">Year</a></th>
+                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=date">Month</a></th>
+					<th><a href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_name">Meter name</a></th>
+                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=usage">Usage</a></th>
+					<th><a href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_unit">Unit</a></th>
 				</thead>
 				<tbody>
-					{% for r in object_list %}
+					{% for r in usages %}
                         <tr>
 					        <td>{{ r.year }}</td>
                             <td>{{ r.month }}</td>

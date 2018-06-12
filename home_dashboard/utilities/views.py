@@ -203,10 +203,22 @@ def list_readings(request):
     except Reading.DoesNotExist:
         pass
 
+    #Get the sort_key from the session
+    sort_key = request.session.get('readinglist_sort_by')
+    #Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
+
+    request.session['readinglist_sort_by'] = sort_key
+    readings = readings.order_by(sort_key)
+
     meters = Meter.objects.all()
     return render(request,
                   'utilities/reading_list.html',
-                  {'object_list': readings,
+                  {'readings': readings,
                    'meters': meters})
 
 @permission_required('utilities.add_reading')
@@ -350,21 +362,37 @@ def edit_reading(request):
                          'alert-success')
     return redirect(reverse('utilities:reading_list'))
 
+#USAGES
 @login_required
 def list_usages(request):
     """
     Show all the usages of the readings.
     TODO: add paging
     TODO: make selection of meter, data, ...
-    TODO: add sorting
     """
+    #Get the sort_key from the session
+    sort_key = request.session.get('usagelist_sort_by')
+    #Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
+
+    request.session['usagelist_sort_by'] = sort_key
+
     try:
         usages = Usage.objects.all()
         if request.GET.get('m_id'):
             usages = usages.filter(meter_id=request.GET.get('m_id'))
+        if sort_key[-4:] == 'date':
+            order = '-' if sort_key[:1] == '-' else ''
+            usages = usages.order_by(order + 'year', order + 'month')
+        else:
+            usages = usages.order_by(sort_key)
     except Usage.DoesNotExist:
         pass
 
     meters = Meter.objects.all()
 
-    return render(request, 'utilities/usage_list.html', {'object_list': usages, 'meters': meters})
+    return render(request, 'utilities/usage_list.html', {'usages': usages, 'meters': meters})
