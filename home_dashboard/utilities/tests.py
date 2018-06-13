@@ -133,6 +133,27 @@ class MeterViewTests(TransactionTestCase):
         self.assertContains(response, "No meters yet")
         self.assertContains(response, "testmeter is deleted")
 
+    def test_remove_non_existing_meter(self):
+        """
+        Test expected error on deleting a meter that doesn't exist.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        p2 = Permission.objects.get(name='Can delete meter')
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        self.client.post(reverse('utilities:add_meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        response = self.client.post(reverse('utilities:delete_meter'),
+                                    data={'meter_name': 'NONEXISTING'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "testmeter")
+        self.assertNotContains(response, "testmeter is deleted")
+        self.assertNotContains(response, "NONEXISTING")
+
     def test_change_meter(self):
         """
         Test if anyone can change a mter (No!)

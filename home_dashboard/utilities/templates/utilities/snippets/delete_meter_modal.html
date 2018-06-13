@@ -1,7 +1,9 @@
-<!-- Button trigger modal -->
-<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteMeterModal">
-  Delete a Meter
-</button>
+<script>
+    function deletemeter(name){
+        $('#meterNameInput').val(name);
+        $('#deleteMeterModal').modal('show');
+    }
+</script>
 
 <!-- Modal -->
 <div class="modal fade" id="deleteMeterModal" tabindex="-1" role="dialog" aria-labelledby="deletewMeterModalLabel" aria-hidden="true">
