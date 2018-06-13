@@ -1,10 +1,15 @@
-image: https://github.com/docker-library/python/blob/b99b66406ebe728fb4da64548066ad0be6582e08/3.6/stretch/Dockerfile
-
 stages:
     - test
+
+before_script:
+  # this configures Django application to use attached postgres database that is run on `postgres` host
+  - echo 'Starting before script'
+  - apt-get update -qy
+  - apt-get install -y python-dev python-pip
+  - pip install -r requirements.txt
 
 test:
     stage: test
     script:
-        - pip install -r requirments.txt
+        - echo 'Starting the test'
         - python manage.py test
