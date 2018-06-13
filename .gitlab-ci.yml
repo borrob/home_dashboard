@@ -5,6 +5,8 @@ stages:
 
 before_script:
   - pip install -r requirements.txt
+  - apt-get update -qy
+  - apt-get install bc
 
 test:
     stage: test
