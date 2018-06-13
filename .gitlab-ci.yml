@@ -19,4 +19,4 @@ check:
     stage: test
     script:
         - echo 'Starting pylint'
-        - pylint --rcfile pylint home_dashboard/*/*.py
+        - pylint --rcfile pylintrc home_dashboard/*/*.py
