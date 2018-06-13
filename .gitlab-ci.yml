@@ -4,19 +4,17 @@ stages:
     - test
 
 before_script:
-  # this configures Django application to use attached postgres database that is run on `postgres` host
-  - echo 'Starting before script'
   - pip install -r requirements.txt
 
 test:
     stage: test
     script:
-        - echo 'Starting the test'
         - cd home_dashboard
         - python manage.py test
 
 check:
     stage: test
     script:
-        - echo 'Starting pylint'
-        - pylint --rcfile pylintrc home_dashboard/*/*.py
+        - pylint --rcfile pylintrc home_dashboard/*/*.py > pylint_out.txt
+        - score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint_out.txt
+        - if [ $score -lt 8 ] then exit 1 fi
