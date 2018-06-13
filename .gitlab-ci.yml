@@ -12,4 +12,5 @@ test:
     stage: test
     script:
         - echo 'Starting the test'
-        - python home_dashboard/manage.py test
+        - cd home_dashboard
+        - python manage.py test
