@@ -1,11 +1,11 @@
+image: python:3.6
+
 stages:
     - test
 
 before_script:
   # this configures Django application to use attached postgres database that is run on `postgres` host
   - echo 'Starting before script'
-  - apt-get update -qy
-  - apt-get install -y python36
   - pip install -r requirements.txt
 
 test:
