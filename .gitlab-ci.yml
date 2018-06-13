@@ -14,3 +14,9 @@ test:
         - echo 'Starting the test'
         - cd home_dashboard
         - python manage.py test
+
+check:
+    stage: test
+    script:
+        - echo 'Starting pylint'
+        - pylint --rcfile pylint home_dashboard/*/*.py
