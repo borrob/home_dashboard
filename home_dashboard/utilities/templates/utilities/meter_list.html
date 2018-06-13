@@ -19,14 +19,15 @@
                             <td>{{ m.pk }}.</td>
                             <td>{{ m.meter_name }}</td>
                             <td>{{ m.meter_unit }}</td>
+                            <td>
                             {% if perms.utilities.change_meter %}
-                                <td>
                                     <a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">
-                                    <img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"</a>
-                                </td>
-                            {% else %}
-                                <td></td>
+                                    <img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
                             {% endif %}
+                            {% if perms.utilities.delete_meter %}
+                                    <a onclick="deletemeter('{{ m.meter_name }}')"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"/></a>
+                            {% endif %}
+                            </td>
                         </tr>
                             {% empty %}
                         <tr>
