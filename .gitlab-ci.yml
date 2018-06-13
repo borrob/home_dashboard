@@ -1,0 +1,22 @@
+image: python:3.6
+
+stages:
+    - test
+
+before_script:
+  - pip install -r requirements.txt
+  - apt-get update -qy
+  - apt-get install bc
+
+test:
+    stage: test
+    script:
+        - cd home_dashboard
+        - python manage.py test
+
+check:
+    stage: test
+    script:
+        - pylint --rcfile pylintrc home_dashboard/*/*.py > pylint_out.txt
+        - score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint_out.txt)
+        - if [ $(bc -l <<< "$score < 8") -eq 1 ]; then exit 1; fi
