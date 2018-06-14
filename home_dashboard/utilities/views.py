@@ -261,7 +261,6 @@ def add_reading(request):
                                                   date(),
                                              remark=remark)
         new_reading.save()
-        update_usage_after_new_reading(new_reading)
     messages.add_message(request,
                          messages.INFO,
                          '{0} is added.'.format(new_reading),
@@ -294,7 +293,6 @@ def delete_reading(request):
         #pylint: disable=unused-variable
         reading_to_delete = Reading.objects.get(pk=reading_id)
         (deleted, deleted_reading) = reading_to_delete.delete()
-        update_usage_after_new_reading(reading_to_delete)
     except Reading.DoesNotExist:
         messages.add_message(request,
                              messages.ERROR,

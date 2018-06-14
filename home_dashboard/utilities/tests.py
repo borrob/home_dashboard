@@ -229,7 +229,7 @@ class ReadingViewTests(TestCase):
     right permissions.
     """
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, no-self-use
 
     def setUp(self):
         """
@@ -367,7 +367,6 @@ class ReadingViewTests(TestCase):
         self.assertNotContains(response, "99")
 
     def test_cannot_store_two_readings_on_same_data_with_same_meter(self):
-
         """
         Test to see if the useage is correctly calculated.
         """
@@ -387,6 +386,52 @@ class ReadingViewTests(TestCase):
         else:
             self.fail('Expected unique constraint error.')
 
+    def test_add_reading_calculates_usages(self):
+        """
+        Adding a reading should calculate the usages.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=0,
+                            meter=meter)
+        reading_1.save()
+        reading_2 = Reading(date=datetime.date(2018, 2, 1),
+                            reading=10,
+                            meter=meter)
+        reading_2.save()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            assert(False), 'Expected at least one usage'
+
+    def test_deleting_reading_calculates_usages(self):
+        """
+        Deleting a reading should calculate the usages.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=0,
+                            meter=meter)
+        reading_1.save()
+        reading_2 = Reading(date=datetime.date(2018, 2, 1),
+                            reading=10,
+                            meter=meter)
+        reading_2.save()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            assert(False), 'Expected at least one usage'
+
+        Reading.objects.get(pk=reading_2.id).delete()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            #Correct: usage is deleted
+            pass
+        else:
+            assert(False), 'Usage should have been deleted'
 
 class UsageTests(TestCase):
     """
