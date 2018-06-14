@@ -15,7 +15,8 @@ class UtilitiesConfig(AppConfig):
 
         When a reading is saved: calculate the new usage.
         """
-        from django.db.models.signals import post_save
-        from .signals import reading_saved
+        from django.db.models.signals import post_save, post_delete
+        from .signals import reading_saved, reading_deleted
         from .models import Reading
         post_save.connect(reading_saved, sender=Reading)
+        post_delete.connect(reading_deleted, sender=Reading)
