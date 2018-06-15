@@ -12,6 +12,7 @@ from django.utils.datastructures import MultiValueDictKeyError
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
+from .forms import NewMeterForm
 from .models import Meter, Reading, Usage, update_usage_after_new_reading
 
 #METER
@@ -56,38 +57,34 @@ def add_meter(request):
     """
     Add a meter.
     """
-    try:
-        meter_name = request.POST.get('meter_name')
-        meter_unit = request.POST.get('unit_name')
-    except KeyError:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new meter.',
-                             'alert-danger')
+    if request.method == 'POST':
+        form = NewMeterForm(request.POST)
+        if form.is_valid():
+            try:
+                new_meter = Meter.objects.create(meter_name=form.cleaned_data['meter_name'], meter_unit=form.cleaned_data['unit_name'])
+                new_meter.save()
+            except IntegrityError:
+                messages.add_message(request,
+                                     messages.ERROR,
+                                     'Meter already exists. Cannot add a double entry.',
+                                     'alert-danger')
+            else:
+                messages.add_message(request,
+                                     messages.INFO,
+                                     'Meter {0} is added.'.format(new_meter.meter_name),
+                                     'alert-success')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing key element to add a new meter.',
+                                 'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    if(meter_name is None or meter_unit is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new meter.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    try:
-        new_meter = Meter.objects.create(meter_name=meter_name, meter_unit=meter_unit)
-        new_meter.save()
-    except IntegrityError:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Meter already exists. Cannot add a double entry.',
-                             'alert-danger')
     else:
-        messages.add_message(request,
-                             messages.INFO,
-                             'Meter {0} is added.'.format(new_meter.meter_name),
-                             'alert-success')
+        #TODO: move edit_meter to this point and init with the known settings
+        form = NewMeterForm()
+        return render(request, 'utilities/meter_form.html', {'form': form})
 
-    return redirect(reverse('utilities:meter_list'))
 
 @permission_required('utilities.delete_meter')
 def delete_meter(request):
