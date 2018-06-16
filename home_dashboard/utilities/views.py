@@ -56,32 +56,10 @@ class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-ma
 def meter(request, meter_id=None):
     """
     Add or edit a meter.
-
-    TODO: this method became too long -> split it
     """
     if request.method == 'POST' and not(request.POST.get('_method', 'not_put') == 'PUT'):
         if request.user.has_perm('utilities.add_meter'):
-            form = NewMeterForm(request.POST)
-            if form.is_valid():
-                try:
-                    new_meter = Meter.objects.create(meter_name=form.cleaned_data['meter_name'], meter_unit=form.cleaned_data['unit_name'])
-                    new_meter.save()
-                except IntegrityError:
-                    messages.add_message(request,
-                                         messages.ERROR,
-                                         'Meter name is already taken. Cannot add a double entry.',
-                                         'alert-danger')
-                else:
-                    messages.add_message(request,
-                                         messages.INFO,
-                                         'Meter {0} is added.'.format(new_meter.meter_name),
-                                         'alert-success')
-            else:
-                messages.add_message(request,
-                                     messages.ERROR,
-                                     'Missing key element to add a new meter.',
-                                     'alert-danger')
-
+            _add_new_meter_from_request(request)
         else:
             messages.add_message(request,
                                  messages.ERROR,
@@ -91,36 +69,7 @@ def meter(request, meter_id=None):
 
     if request.method == 'POST' and request.POST.get('_method', 'not_put') == 'PUT':
         if request.user.has_perm('utilities.change_meter'):
-            form = NewMeterForm(request.POST)
-            try:
-                meter = Meter.objects.get(pk=form.data.get('id'))
-            except (KeyError, Meter.DoesNotExist):
-                messages.add_message(request,
-                                     messages.ERROR,
-                                     'Something went wrong with getting the old meter.',
-                                     'alert-danger')
-                return redirect(reverse('utilities:meter_list'))
-            else:
-                if form.is_valid():
-                    try:
-                        meter.meter_name = form.cleaned_data['meter_name']
-                        meter.meter_unit = form.cleaned_data['unit_name']
-                        meter.save()
-                    except IntegrityError:
-                        messages.add_message(request,
-                                             messages.ERROR,
-                                             'Meter name is already taken. Cannot add a double entry.',
-                                             'alert-danger')
-                    else:
-                        messages.add_message(request,
-                                             messages.INFO,
-                                             'Meter {0} is changed.'.format(meter.meter_name),
-                                             'alert-success')
-                else:
-                    messages.add_message(request,
-                                         messages.ERROR,
-                                         'Missing key element to add a new meter.',
-                                         'alert-danger')
+            _change_meter_from_request(request)
         else:
             messages.add_message(request,
                                  messages.ERROR,
@@ -142,6 +91,72 @@ def meter(request, meter_id=None):
             edit = True
 
     return render(request, 'utilities/meter_form.html', {'form': form, 'edit': edit, 'm_id': meter_id})
+
+def _add_new_meter_from_request(request):
+    """
+    Add a new meter form the post data of this request. Does **NOT** check permission.
+    :param request: the user http request with the info on the new meter.
+    :return: nothing
+    """
+    form = NewMeterForm(request.POST)
+    if form.is_valid():
+        try:
+            new_meter = Meter.objects.create(meter_name=form.cleaned_data['meter_name'],
+                                             meter_unit=form.cleaned_data['unit_name'])
+            new_meter.save()
+        except IntegrityError:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Meter name is already taken. Cannot add a double entry.',
+                                 'alert-danger')
+        else:
+            messages.add_message(request,
+                                 messages.INFO,
+                                 'Meter {0} is added.'.format(new_meter.meter_name),
+                                 'alert-success')
+    else:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new meter.',
+                             'alert-danger')
+
+def _change_meter_from_request(request):
+    """
+    Change a meter with the data from the user request. Does **NOT** check permissions.
+
+    :param request: the user http request with the relevant data
+    :return: nothing
+    """
+    form = NewMeterForm(request.POST)
+    try:
+        meter = Meter.objects.get(pk=form.data.get('id'))
+    except (KeyError, Meter.DoesNotExist):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Something went wrong with getting the old meter.',
+                             'alert-danger')
+        return redirect(reverse('utilities:meter_list'))
+    else:
+        if form.is_valid():
+            try:
+                meter.meter_name = form.cleaned_data['meter_name']
+                meter.meter_unit = form.cleaned_data['unit_name']
+                meter.save()
+            except IntegrityError:
+                messages.add_message(request,
+                                     messages.ERROR,
+                                     'Meter name is already taken. Cannot add a double entry.',
+                                     'alert-danger')
+            else:
+                messages.add_message(request,
+                                     messages.INFO,
+                                     'Meter {0} is changed.'.format(meter.meter_name),
+                                     'alert-success')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing key element to add a new meter.',
+                                 'alert-danger')
 
 @permission_required('utilities.delete_meter')
 def delete_meter(request):
