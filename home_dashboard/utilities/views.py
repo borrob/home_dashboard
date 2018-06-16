@@ -188,61 +188,6 @@ def delete_meter(request):
                          'alert-danger')
     return redirect(reverse('utilities:meter_list'))
 
-@permission_required('utilities.change_meter')
-def edit_meter(request):
-    """
-    Edit a meter.
-    """
-    try:
-        meter_name = request.POST.get('meter_name')
-        new_name = request.POST.get('new_name')
-        meter_unit = request.POST.get('unit_name')
-    except KeyError:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to change a meter.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    if(meter_name is None or meter_unit is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to change a meter.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    try:
-        edited_meter = Meter.objects.get(meter_name=meter_name)
-    except Meter.DoesNotExist:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Cannot change a meter that doesn\'t exist yet.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    try:
-        namecheck_meter = Meter.objects.get(meter_name=new_name)
-    except Meter.DoesNotExist:
-        #new name isn't taken -> OK!
-        pass
-    else:
-        if namecheck_meter.pk != edited_meter.pk:
-            #just changing the unit name
-            messages.add_message(request,
-                                 messages.ERROR,
-                                 'Name is already taken',
-                                 'alert-danger')
-            return redirect(reverse('utilities:meter_list'))
-
-    edited_meter.meter_name = new_name
-    edited_meter.unit_name = meter_unit
-    edited_meter.save()
-    messages.add_message(request,
-                         messages.INFO,
-                         'Meter {0} is changed.'.format(edited_meter.meter_name),
-                         'alert-success')
-    return redirect(reverse('utilities:meter_list'))
-
 #READINGS
 @login_required
 def list_readings(request):
