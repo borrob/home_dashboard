@@ -6,14 +6,21 @@
     <main role="main" class="container">
 
         <div class="card">
-            <h2 style="color: var(--primary)">New meter</h2>
-            <form action="{% url 'utilities:add_meter' %}" method="post">
-                {% csrf_token %}
-                <table class="table">
-                    {{ form.as_table }}
-                </table>
-                <button type="submit" class="btn btn-primary">Add meter</button>
-            </form>
+            {% if edit %}
+                <h2 style="color: var(--primary)">Edit meter</h2>
+                <form action="{% url 'utilities:meter' %}" method="post">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="id" value="{{ m_id }}">
+            {% else %}
+                <h2 style="color: var(--primary)">New meter</h2>
+                <form action="{% url 'utilities:meter' %}" method="post">
+            {% endif %}
+                    {% csrf_token %}
+                    <table class="table">
+                        {{ form.as_table }}
+                    </table>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
 		</div>
     </main>
 

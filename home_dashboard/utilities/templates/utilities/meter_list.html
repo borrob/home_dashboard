@@ -22,7 +22,7 @@
                             <td>{{ m.meter_unit }}</td>
                             <td>
                             {% if perms.utilities.change_meter %}
-                                    <a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">
+                                    <a href="{% url 'utilities:meter' m.id %}">
                                     <img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
                             {% endif %}
                             {% if perms.utilities.delete_meter %}
@@ -40,14 +40,11 @@
 		</div>
 
 		{% if perms.utilities.add_meter %}
-            <a href="{% url 'utilities:add_meter' %} " type="button" class="btn btn-primary">Add new Meter</a>
+            <a href="{% url 'utilities:meter' %} " type="button" class="btn btn-primary">Add new Meter</a>
 		{% endif %}
 		{% if perms.utilities.delete_meter %}
 			{% include 'utilities/snippets/delete_meter_modal.html' %}
 		{% endif %}
-        {% if perms.utilities.change_meter %}
-          {% include 'utilities/snippets/edit_meter_modal.html' %}
-        {% endif %}
 
     </main>
 
