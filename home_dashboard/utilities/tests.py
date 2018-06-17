@@ -187,12 +187,12 @@ class MeterViewTests(TransactionTestCase):
                          data={'meter_name': 'testmeter',
                                'unit_name': 'm'},
                          follow=True)
-        id = Meter.objects.get(meter_name='testmeter').id
+        m_id = Meter.objects.get(meter_name='testmeter').id
         response = self.client.post(reverse('utilities:meter'),
                                     data={'unit_name': 's',
                                           'meter_name': 'thenewmeter',
                                           '_method': 'PUT',
-                                          'id': id},
+                                          'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "thenewmeter")
@@ -211,7 +211,7 @@ class MeterViewTests(TransactionTestCase):
                          data={'meter_name': 'testmeter',
                                'unit_name': 'm'},
                          follow=True)
-        id = Meter.objects.get(meter_name='testmeter').id
+        m_id = Meter.objects.get(meter_name='testmeter').id
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'nametaken',
                                'unit_name': 'm'},
@@ -220,7 +220,7 @@ class MeterViewTests(TransactionTestCase):
                                     data={'unit_name': 's',
                                           'meter_name': 'nametaken',
                                           '_method': 'PUT',
-                                          'id': id},
+                                          'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")

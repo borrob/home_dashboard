@@ -57,7 +57,7 @@ def meter(request, meter_id=None):
     """
     Add or edit a meter.
     """
-    if request.method == 'POST' and not(request.POST.get('_method', 'not_put') == 'PUT'):
+    if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
         if request.user.has_perm('utilities.add_meter'):
             _add_new_meter_from_request(request)
         else:
@@ -83,14 +83,17 @@ def meter(request, meter_id=None):
     edit = False
     if meter_id:
         try:
-            meter = Meter.objects.get(pk=meter_id)
+            meter_to_edit = Meter.objects.get(pk=meter_id)
         except Meter.DoesNotExist:
             pass
         else:
-            form = NewMeterForm(initial={'meter_name': meter.meter_name, 'unit_name': meter.meter_unit})
+            form = NewMeterForm(initial={'meter_name': meter_to_edit.meter_name,
+                                         'unit_name': meter_to_edit.meter_unit})
             edit = True
 
-    return render(request, 'utilities/meter_form.html', {'form': form, 'edit': edit, 'm_id': meter_id})
+    return render(request,
+                  'utilities/meter_form.html',
+                  {'form': form, 'edit': edit, 'm_id': meter_id})
 
 def _add_new_meter_from_request(request):
     """
@@ -129,19 +132,18 @@ def _change_meter_from_request(request):
     """
     form = NewMeterForm(request.POST)
     try:
-        meter = Meter.objects.get(pk=form.data.get('id'))
+        meter_to_change = Meter.objects.get(pk=form.data.get('id'))
     except (KeyError, Meter.DoesNotExist):
         messages.add_message(request,
                              messages.ERROR,
                              'Something went wrong with getting the old meter.',
                              'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
     else:
         if form.is_valid():
             try:
-                meter.meter_name = form.cleaned_data['meter_name']
-                meter.meter_unit = form.cleaned_data['unit_name']
-                meter.save()
+                meter_to_change.meter_name = form.cleaned_data['meter_name']
+                meter_to_change.meter_unit = form.cleaned_data['unit_name']
+                meter_to_change.save()
             except IntegrityError:
                 messages.add_message(request,
                                      messages.ERROR,
@@ -150,7 +152,7 @@ def _change_meter_from_request(request):
             else:
                 messages.add_message(request,
                                      messages.INFO,
-                                     'Meter {0} is changed.'.format(meter.meter_name),
+                                     'Meter {0} is changed.'.format(meter_to_change.meter_name),
                                      'alert-success')
         else:
             messages.add_message(request,
@@ -241,7 +243,7 @@ def add_reading(request):
     Add a reading.
     """
     try:
-        meter = int(request.POST.get('meter_id'))
+        meter_id_for_reading = int(request.POST.get('meter_id'))
         reading_date = request.POST.get('reading_date')
         reading_number = Decimal(request.POST.get('reading'))
         remark = request.POST.get('remark')
@@ -252,7 +254,7 @@ def add_reading(request):
                              'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(meter is None or reading_date is None or reading_number is None):
+    if(meter_id_for_reading is None or reading_date is None or reading_number is None):
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to add a new reading.',
@@ -260,7 +262,7 @@ def add_reading(request):
         return redirect(reverse('utilities:reading_list'))
 
     try:
-        meter = Meter.objects.get(pk=meter)
+        meter_for_reading = Meter.objects.get(pk=meter_id_for_reading)
     except Meter.DoesNotExist:
         messages.add_message(request,
                              messages.ERROR,
@@ -268,7 +270,7 @@ def add_reading(request):
                              'alert-danger')
         return redirect(reverse('utilities:reading_list'))
     else:
-        new_reading = Reading.objects.create(meter=meter,
+        new_reading = Reading.objects.create(meter=meter_for_reading,
                                              reading=reading_number,
                                              date=datetime.\
                                                   strptime(reading_date, '%Y-%m-%d').\
@@ -333,7 +335,7 @@ def edit_reading(request):
     """
     try:
         reading = int(request.POST.get('reading_id'))
-        meter = int(request.POST.get('meter_id'))
+        meter_id = int(request.POST.get('meter_id'))
         reading_date = request.POST.get('reading_date')
         reading_number = Decimal(request.POST.get('reading'))
         remark = request.POST.get('remark')
@@ -344,7 +346,7 @@ def edit_reading(request):
                              'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(meter is None or reading_date is None or reading_number is None):
+    if(meter_id is None or reading_date is None or reading_number is None):
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to change the reading.',
@@ -352,7 +354,7 @@ def edit_reading(request):
         return redirect(reverse('utilities:reading_list'))
 
     try:
-        meter = Meter.objects.get(pk=meter)
+        meter_for_this_reading = Meter.objects.get(pk=meter_id)
     except Meter.DoesNotExist:
         messages.add_message(request,
                              messages.ERROR,
@@ -361,7 +363,7 @@ def edit_reading(request):
         return redirect(reverse('utilities:reading_list'))
 
     edited_reading = Reading.objects.get(pk=reading)
-    edited_reading.meter = meter
+    edited_reading.meter = meter_for_this_reading
     edited_reading.reading = reading_number
     edited_reading.date = datetime.strptime(reading_date, '%Y-%m-%d').date()
     edited_reading.remark = remark
