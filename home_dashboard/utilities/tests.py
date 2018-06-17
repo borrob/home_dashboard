@@ -267,7 +267,7 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
@@ -285,7 +285,7 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
@@ -340,11 +340,13 @@ class ReadingViewTests(TestCase):
         r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
         r.save()
 
-        response = self.client.post(reverse('utilities:edit_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
-                                          'remark': 'test'},
+                                          'remark': 'test',
+                                          '_method': 'PUT',
+                                          'id': r.id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
@@ -358,15 +360,18 @@ class ReadingViewTests(TestCase):
         m.save()
         r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
         r.save()
-        p = Permission.objects.get(name='Can delete reading')
+        p = Permission.objects.get(name='Can change reading')
         self.user.user_permissions.add(p)
 
-        response = self.client.post(reverse('utilities:edit_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
-                                          'remark': 'test'},
+                                          'remark': 'test',
+                                          '_method': 'PUT',
+                                          'id': r.id},
                                     follow=True)
+        print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")

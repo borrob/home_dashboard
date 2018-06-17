@@ -13,8 +13,8 @@ urlpatterns = [
     path('meter/<int:meter_id>/', views.meter, name='meter'),
     path('deletemeter', views.delete_meter, name='delete_meter'),
     path('readinglist', views.list_readings, name='reading_list'),
-    path('addreading', views.add_reading, name='add_reading'),
+    path('reading', views.reading, name='reading'),
+    path('reading/<int:reading_id>/', views.reading, name='reading'),
     path('deletereading', views.delete_reading, name='delete_reading'),
-    path('editreading', views.edit_reading, name='edit_reading'),
     path('usagelist', views.list_usages, name='usage_list')
 ]
