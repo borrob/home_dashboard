@@ -6,6 +6,7 @@
     <main role="main" class="container">
 
         <div class="card">
+            <h2 style="color: var(--primary)">Meter list</h2>
             <table class="table table-hover">
                 <thead>
                     <th><a href="{% url 'utilities:meter_list' %}?sort_by=id">#</a></th>
@@ -21,7 +22,7 @@
                             <td>{{ m.meter_unit }}</td>
                             <td>
                             {% if perms.utilities.change_meter %}
-                                    <a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">
+                                    <a href="{% url 'utilities:meter' m.id %}">
                                     <img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
                             {% endif %}
                             {% if perms.utilities.delete_meter %}
@@ -39,14 +40,11 @@
 		</div>
 
 		{% if perms.utilities.add_meter %}
-			{% include 'utilities/snippets/add_meter_modal.html' %}
+            <a href="{% url 'utilities:meter' %} " type="button" class="btn btn-primary">Add new Meter</a>
 		{% endif %}
 		{% if perms.utilities.delete_meter %}
 			{% include 'utilities/snippets/delete_meter_modal.html' %}
 		{% endif %}
-        {% if perms.utilities.change_meter %}
-          {% include 'utilities/snippets/edit_meter_modal.html' %}
-        {% endif %}
 
     </main>
 
