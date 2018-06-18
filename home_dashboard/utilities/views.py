@@ -1,9 +1,6 @@
 """
 Defining the utilities URL links and their respones.
 """
-from datetime import datetime
-from decimal import Decimal
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -13,7 +10,7 @@ from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
 from .forms import NewMeterForm, ReadingForm
-from .models import Meter, Reading, Usage, update_usage_after_new_reading
+from .models import Meter, Reading, Usage
 
 #METER
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
@@ -244,7 +241,8 @@ def reading(request, reading_id=None):
 
     Note: when saving a reading, the usage is calculated automatically.
     :param request: the user http request
-    :param int reading_id: the id of the reading to edit, defauts to 'None' and can be left blank when adding a new meter
+    :param int reading_id: the id of the reading to edit, defauts to 'None' and can be left blank
+                           when adding a new meter.
     :return: html page with the form to add/edit the reading
     """
     if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
@@ -365,7 +363,7 @@ def _change_reading_from_request(request):
     else:
         form = ReadingForm(request.POST, instance=reading_to_change)
         if form.is_valid():
-                form.save()
+            form.save()
         else:
             messages.add_message(request,
                                  messages.ERROR,

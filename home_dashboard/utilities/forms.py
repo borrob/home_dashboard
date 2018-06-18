@@ -27,4 +27,3 @@ class ReadingForm(forms.ModelForm):
         widgets = {
             'date': forms.DateInput({'class': 'datepicker', 'type': 'date'})
         }
-

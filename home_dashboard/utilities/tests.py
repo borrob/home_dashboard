@@ -371,7 +371,6 @@ class ReadingViewTests(TestCase):
                                           '_method': 'PUT',
                                           'id': r.id},
                                     follow=True)
-        print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")
