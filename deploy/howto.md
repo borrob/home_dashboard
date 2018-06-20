@@ -25,8 +25,11 @@ Here are some suggestions on how to deploy the app.
 
 ## Deploy
 
-1. Check your ``settings.py`` file.
-2. Run a ``./manage.py migrate``
-3. Run a ``./manage.py check --deploy`` and fix any issue
-4. Restart your uWSGI and NGINX services
-5. Create your admin user (and other users)
+1. Backup your environment files like ``settings.py`` and any database files.
+2. Copy the new deploy: ``rsync -avr SOURCE DEST --delete-after
+3. Move the environment files back to their location
+4. Check file permissions
+5. Run a ``./manage.py migrate``
+6. Run a ``./manage.py check --deploy`` and fix any issues
+7. Restart your uWSGI and NGINX services
+8. Create your admin user (and other users)
