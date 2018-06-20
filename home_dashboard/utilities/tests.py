@@ -254,6 +254,28 @@ class MeterViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
         self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+    def test_edit_incomplete_meter(self):
+        """
+        Test that all the fiels should be given to add a changed meter.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        p2 = Permission.objects.get(name='Can change meter')
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        self.client.post(reverse('utilities:meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        m_id = Meter.objects.get(meter_name='testmeter').id
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_name': 'missing_unit_name',
+                                          '_method': 'PUT',
+                                          'id': m_id},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing key element to change meter.')
+
 
 class ReadingViewTests(TestCase):
     """

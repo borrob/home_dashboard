@@ -124,6 +124,8 @@ def _change_meter_from_request(request):
     """
     Change a meter with the data from the user request. Does **NOT** check permissions.
 
+    The entire information set of the meter should be supplied.
+
     :param request: the user http request with the relevant data
     :return: nothing
     """
@@ -154,7 +156,7 @@ def _change_meter_from_request(request):
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Missing key element to add a new meter.',
+                                 'Missing key element to change meter.',
                                  'alert-danger')
 
 @permission_required('utilities.delete_meter')
