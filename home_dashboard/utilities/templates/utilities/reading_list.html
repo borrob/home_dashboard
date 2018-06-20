@@ -18,15 +18,15 @@
             </div>
 			<table class="table table-hover">
 				<thead>
-					<th></th>
-                    <th>Date</th>
-					<th>Meter name</th>
-                    <th>Reading</th>
-					<th>Unit</th>
+                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=id">#</a></th>
+                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=date">Date</a></th>
+					<th><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_name">Meter name</a></th>
+                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=reading">Reading</a></th>
+					<th><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_unit">Unit</a></th>
                     <th></th>
 				</thead>
 				<tbody>
-					{% for r in object_list %}
+					{% for r in readings %}
           <tr>
 					    <td>{{ r.pk }}.</td>
                         <td>{{ r.date }}</td>

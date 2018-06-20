@@ -3,7 +3,8 @@ Testing of all the classes and endpoints for the utilities app.
 """
 import datetime
 from django.contrib.auth.models import User, Permission
-from django.test import Client, TestCase
+from django.db import IntegrityError
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .exceptions import MeterError
@@ -13,7 +14,7 @@ from .models import update_usage_after_new_reading
 
 # Create your tests here.
 
-class MeterViewTests(TestCase):
+class MeterViewTests(TransactionTestCase):
     """
     Test the functionality of the Meter endpoint.
 
@@ -52,7 +53,7 @@ class MeterViewTests(TestCase):
         Test if anyone can add a meter (should be no).
         """
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'),
+        response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'test',
                                           'unit_name': 'm'},
                                     follow=True)
@@ -66,13 +67,34 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'),
+        response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
                                           'unit_name': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
         self.assertContains(response, 'testmeter')
+
+    def test_add_meter_with_same_name(self):
+        """
+        Test cannot add second meter with same name.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "No meters yet")
+        self.assertContains(response, 'testmeter')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_name': 'testmeter',
+                                          'unit_name': 'm'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
 
     def test_remove_meter(self):
         """
@@ -81,7 +103,7 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'),
+        response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
                                           'unit_name': 'm'},
                                     follow=True)
@@ -100,7 +122,7 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'),
+        self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
                                'unit_name': 'm'},
                          follow=True)
@@ -111,6 +133,27 @@ class MeterViewTests(TestCase):
         self.assertContains(response, "No meters yet")
         self.assertContains(response, "testmeter is deleted")
 
+    def test_remove_non_existing_meter(self):
+        """
+        Test expected error on deleting a meter that doesn't exist.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        p2 = Permission.objects.get(name='Can delete meter')
+        self.user.user_permissions.add(p)
+        self.user.user_permissions.add(p2)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        self.client.post(reverse('utilities:meter'),
+                         data={'meter_name': 'testmeter',
+                               'unit_name': 'm'},
+                         follow=True)
+        response = self.client.post(reverse('utilities:delete_meter'),
+                                    data={'meter_name': 'NONEXISTING'},
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "testmeter")
+        self.assertNotContains(response, "testmeter is deleted")
+        self.assertNotContains(response, "NONEXISTING")
+
     def test_change_meter(self):
         """
         Test if anyone can change a mter (No!)
@@ -118,14 +161,15 @@ class MeterViewTests(TestCase):
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
-        response = self.client.post(reverse('utilities:add_meter'),
+        response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
                                           'unit_name': 'm'},
                                     follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'),
+        response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
                                           'unit_name': 's',
-                                          'new_name': 'thenewmeter'},
+                                          'new_name': 'thenewmeter',
+                                          '_method': 'PUT'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
@@ -139,14 +183,16 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'),
+        self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
                                'unit_name': 'm'},
                          follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'),
-                                    data={'meter_name': 'testmeter',
-                                          'unit_name': 's',
-                                          'new_name': 'thenewmeter'},
+        m_id = Meter.objects.get(meter_name='testmeter').id
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'unit_name': 's',
+                                          'meter_name': 'thenewmeter',
+                                          '_method': 'PUT',
+                                          'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "thenewmeter")
@@ -161,22 +207,24 @@ class MeterViewTests(TestCase):
         self.user.user_permissions.add(p)
         self.user.user_permissions.add(p2)
         self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:add_meter'),
+        self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
                                'unit_name': 'm'},
                          follow=True)
-        self.client.post(reverse('utilities:add_meter'),
+        m_id = Meter.objects.get(meter_name='testmeter').id
+        self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'nametaken',
                                'unit_name': 'm'},
                          follow=True)
-        response = self.client.post(reverse('utilities:edit_meter'),
-                                    data={'meter_name': 'testmeter',
-                                          'unit_name': 's',
-                                          'new_name': 'nametaken'},
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'unit_name': 's',
+                                          'meter_name': 'nametaken',
+                                          '_method': 'PUT',
+                                          'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
-        self.assertContains(response, "Name is already taken")
+        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
 
 class ReadingViewTests(TestCase):
     """
@@ -186,7 +234,7 @@ class ReadingViewTests(TestCase):
     right permissions.
     """
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name, no-self-use
 
     def setUp(self):
         """
@@ -219,7 +267,7 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
@@ -237,7 +285,7 @@ class ReadingViewTests(TestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         m = Meter.objects.create(meter_name='testmeter', meter_unit='test')
         m.save()
-        response = self.client.post(reverse('utilities:add_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
@@ -292,11 +340,13 @@ class ReadingViewTests(TestCase):
         r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
         r.save()
 
-        response = self.client.post(reverse('utilities:edit_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
-                                          'remark': 'test'},
+                                          'remark': 'test',
+                                          '_method': 'PUT',
+                                          'id': r.id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
@@ -310,18 +360,87 @@ class ReadingViewTests(TestCase):
         m.save()
         r = Reading.objects.create(date='2018-03-12', reading=99, meter=m)
         r.save()
-        p = Permission.objects.get(name='Can delete reading')
+        p = Permission.objects.get(name='Can change reading')
         self.user.user_permissions.add(p)
 
-        response = self.client.post(reverse('utilities:edit_reading'),
+        response = self.client.post(reverse('utilities:reading'),
                                     data={'date': '2018-04-04',
                                           'reading': 5,
                                           'meter': m.id,
-                                          'remark': 'test'},
+                                          'remark': 'test',
+                                          '_method': 'PUT',
+                                          'id': r.id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
         self.assertNotContains(response, "99")
+
+    def test_cannot_store_two_readings_on_same_data_with_same_meter(self):
+        """
+        Test to see if the useage is correctly calculated.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=1,
+                            meter=meter)
+        reading_2 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=10,
+                            meter=meter)
+        try:
+            reading_1.save()
+            reading_2.save()
+        except IntegrityError:
+            pass
+        else:
+            self.fail('Expected unique constraint error.')
+
+    def test_add_reading_calculates_usages(self):
+        """
+        Adding a reading should calculate the usages.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=0,
+                            meter=meter)
+        reading_1.save()
+        reading_2 = Reading(date=datetime.date(2018, 2, 1),
+                            reading=10,
+                            meter=meter)
+        reading_2.save()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            assert(False), 'Expected at least one usage'
+
+    def test_deleting_reading_calculates_usages(self):
+        """
+        Deleting a reading should calculate the usages.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        reading_1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=0,
+                            meter=meter)
+        reading_1.save()
+        reading_2 = Reading(date=datetime.date(2018, 2, 1),
+                            reading=10,
+                            meter=meter)
+        reading_2.save()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            assert(False), 'Expected at least one usage'
+
+        Reading.objects.get(pk=reading_2.id).delete()
+        try:
+            Usage.objects.all()[0]
+        except (Usage.DoesNotExist, IndexError):
+            #Correct: usage is deleted
+            pass
+        else:
+            assert(False), 'Usage should have been deleted'
 
 class UsageTests(TestCase):
     """
@@ -337,15 +456,27 @@ class UsageTests(TestCase):
     def test_correct_usage_calculation(self):
         """
         Test to see if the useage is correctly calculated.
+        Readings (at beginning of each day):
+            2018-01-01: 0
+            2018-01-02: 1
+            2018-01-03: 2
+            2018-01-04: 3
+            2018-01-05: 4
+            2018-01-06: 5
+            2018-01-07: 6
+            2018-01-08: 7
+            2018-01-09: 8
+            2018-01-10: 9
+            2018-01-11: 10
         """
         meter = Meter(meter_name='testmeter', meter_unit='m')
         reading_1 = Reading(date=datetime.date(2018, 1, 1),
-                            reading=1,
+                            reading=0,
                             meter=meter)
         reading_2 = Reading(date=datetime.date(2018, 1, 11),
                             reading=10,
                             meter=meter)
-        my_date = datetime.date(2018, 1, 5)
+        my_date = datetime.date(2018, 1, 6)
         use = calculate_reading_on_date(my_date, reading_1, reading_2)
         self.assertEqual(use, 5)
 
@@ -391,16 +522,16 @@ class UsageTests(TestCase):
         """
         meter = Meter(meter_name='testmeter', meter_unit='m')
         meter.save()
-        reading_1 = Reading(date=datetime.date(2018, 8, 1),
+        reading_1 = Reading(date=datetime.date(2018, 7, 1),
                             reading=0,
                             meter=meter)
-        reading_2 = Reading(date=datetime.date(2018, 10, 1),
+        reading_2 = Reading(date=datetime.date(2018, 9, 1),
                             reading=10,
                             meter=meter)
         reading_1.save()
         reading_2.save()
         update_usage_after_new_reading(reading_2)
-        use = Usage.objects.get(month=9, year=2018, meter=meter.id)
+        use = Usage.objects.get(month=8, year=2018, meter=meter.id)
         self.assertEqual(use.usage, 5)
 
         self.client.login(username='testuser', password='q2w3E$R%')

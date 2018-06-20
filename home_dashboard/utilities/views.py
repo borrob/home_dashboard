@@ -1,18 +1,18 @@
 """
 Defining the utilities URL links and their respones.
 """
-from datetime import datetime
-from decimal import Decimal
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
+from django.utils.datastructures import MultiValueDictKeyError
 from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
-from .models import Meter, Reading, Usage, update_usage_after_new_reading
+from .forms import NewMeterForm, ReadingForm
+from .models import Meter, Reading, Usage
 
-# Create your views here.
+#METER
 class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
     """
     Show a list of all the meters.
@@ -24,47 +24,138 @@ class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-ma
     model = Meter
     template = 'utilities/meter_list.html'
 
-@permission_required('utilities.add_meter')
-def add_meter(request):
+    def get_queryset(self):
+        """
+        Get the sorted queryset.
+
+        The set is sorted on the field the user is requesting (with the 'sort_by' url
+        parameter), or if that is not available the column stored in the session, or
+        otherwise the ID field as default.
+
+        Takes care of sorting asc/desc.
+
+        :return: the sorted meter queryset
+        """
+        #Get the sort_key from the session
+        sort_key = self.request.session.get('meterlist_sort_by')
+        #Override with the sort_key that the user iq requesting.
+        try:
+            sort_key_request = self.request.GET['sort_by']
+            sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+        except MultiValueDictKeyError:
+            sort_key = sort_key if sort_key else 'id'
+
+        self.request.session['meterlist_sort_by'] = sort_key
+        queryset = Meter.objects.order_by(sort_key)
+        return queryset
+
+@login_required()
+def meter(request, meter_id=None):
     """
-    Add a meter.
+    Add or edit a meter.
     """
-    try:
-        meter_name = request.POST.get('meter_name')
-        meter_unit = request.POST.get('unit_name')
-    except KeyError:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new meter.',
-                             'alert-danger')
+    if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
+        if request.user.has_perm('utilities.add_meter'):
+            _add_new_meter_from_request(request)
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing permission to add meter, please login',
+                                 'alert-danger')
         return redirect(reverse('utilities:meter_list'))
 
-    if(meter_name is None or meter_unit is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new meter.',
-                             'alert-danger')
+    if request.method == 'POST' and request.POST.get('_method', 'not_put') == 'PUT':
+        if request.user.has_perm('utilities.change_meter'):
+            _change_meter_from_request(request)
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing permission to edit meter, please login.',
+                                 'alert-danger')
+
         return redirect(reverse('utilities:meter_list'))
 
-    try:
-        Meter.objects.get(meter_name=meter_name)
-    except Meter.DoesNotExist:
-        #meter doesn't exist -> OK!
-        pass
+    #Default to GET
+    form = NewMeterForm()
+    edit = False
+    if meter_id:
+        try:
+            meter_to_edit = Meter.objects.get(pk=meter_id)
+        except Meter.DoesNotExist:
+            pass
+        else:
+            form = NewMeterForm(initial={'meter_name': meter_to_edit.meter_name,
+                                         'unit_name': meter_to_edit.meter_unit})
+            edit = True
+
+    return render(request,
+                  'utilities/meter_form.html',
+                  {'form': form, 'edit': edit, 'm_id': meter_id})
+
+def _add_new_meter_from_request(request):
+    """
+    Add a new meter form the post data of this request. Does **NOT** check permission.
+    :param request: the user http request with the info on the new meter.
+    :return: nothing
+    """
+    form = NewMeterForm(request.POST)
+    if form.is_valid():
+        try:
+            new_meter = Meter.objects.create(meter_name=form.cleaned_data['meter_name'],
+                                             meter_unit=form.cleaned_data['unit_name'])
+            new_meter.save()
+        except IntegrityError:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Meter name is already taken. Cannot add a double entry.',
+                                 'alert-danger')
+        else:
+            messages.add_message(request,
+                                 messages.INFO,
+                                 'Meter {0} is added.'.format(new_meter.meter_name),
+                                 'alert-success')
     else:
         messages.add_message(request,
                              messages.ERROR,
-                             'Meter already exists. Cannot add a double entry.',
+                             'Missing key element to add a new meter.',
                              'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
 
-    new_meter = Meter.objects.create(meter_name=meter_name, meter_unit=meter_unit)
-    new_meter.save()
-    messages.add_message(request,
-                         messages.INFO,
-                         'Meter {0} is added.'.format(new_meter.meter_name),
-                         'alert-success')
-    return redirect(reverse('utilities:meter_list'))
+def _change_meter_from_request(request):
+    """
+    Change a meter with the data from the user request. Does **NOT** check permissions.
+
+    :param request: the user http request with the relevant data
+    :return: nothing
+    """
+    form = NewMeterForm(request.POST)
+    try:
+        meter_to_change = Meter.objects.get(pk=form.data.get('id'))
+    except (KeyError, Meter.DoesNotExist):
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Something went wrong with getting the old meter.',
+                             'alert-danger')
+    else:
+        if form.is_valid():
+            try:
+                meter_to_change.meter_name = form.cleaned_data['meter_name']
+                meter_to_change.meter_unit = form.cleaned_data['unit_name']
+                meter_to_change.save()
+            except IntegrityError:
+                messages.add_message(request,
+                                     messages.ERROR,
+                                     'Meter name is already taken. Cannot add a double entry.',
+                                     'alert-danger')
+            else:
+                messages.add_message(request,
+                                     messages.INFO,
+                                     'Meter {0} is changed.'.format(meter_to_change.meter_name),
+                                     'alert-success')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing key element to add a new meter.',
+                                 'alert-danger')
 
 @permission_required('utilities.delete_meter')
 def delete_meter(request):
@@ -111,61 +202,7 @@ def delete_meter(request):
                          'alert-danger')
     return redirect(reverse('utilities:meter_list'))
 
-@permission_required('utilities.change_meter')
-def edit_meter(request):
-    """
-    Edit a meter.
-    """
-    try:
-        meter_name = request.POST.get('meter_name')
-        new_name = request.POST.get('new_name')
-        meter_unit = request.POST.get('unit_name')
-    except KeyError:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to change a meter.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    if(meter_name is None or meter_unit is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to change a meter.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    try:
-        edited_meter = Meter.objects.get(meter_name=meter_name)
-    except Meter.DoesNotExist:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Cannot change a meter that doesn\'t exist yet.',
-                             'alert-danger')
-        return redirect(reverse('utilities:meter_list'))
-
-    try:
-        namecheck_meter = Meter.objects.get(meter_name=new_name)
-    except Meter.DoesNotExist:
-        #new name isn't taken -> OK!
-        pass
-    else:
-        if namecheck_meter.pk != edited_meter.pk:
-            #just changing the unit name
-            messages.add_message(request,
-                                 messages.ERROR,
-                                 'Name is already taken',
-                                 'alert-danger')
-            return redirect(reverse('utilities:meter_list'))
-
-    edited_meter.meter_name = new_name
-    edited_meter.unit_name = meter_unit
-    edited_meter.save()
-    messages.add_message(request,
-                         messages.INFO,
-                         'Meter {0} is changed.'.format(edited_meter.meter_name),
-                         'alert-success')
-    return redirect(reverse('utilities:meter_list'))
-
+#READINGS
 @login_required
 def list_readings(request):
     """
@@ -179,58 +216,71 @@ def list_readings(request):
     except Reading.DoesNotExist:
         pass
 
+    #Get the sort_key from the session
+    sort_key = request.session.get('readinglist_sort_by')
+    #Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
+
+    request.session['readinglist_sort_by'] = sort_key
+    readings = readings.order_by(sort_key)
+
     meters = Meter.objects.all()
     return render(request,
                   'utilities/reading_list.html',
-                  {'object_list': readings,
+                  {'readings': readings,
                    'meters': meters})
 
-@permission_required('utilities.add_reading')
-def add_reading(request):
+@login_required()
+def reading(request, reading_id=None):
     """
-    Add a reading.
+    Add (or edit) a reading and store it into the database.
+
+    Note: when saving a reading, the usage is calculated automatically.
+    :param request: the user http request
+    :param int reading_id: the id of the reading to edit, defauts to 'None' and can be left blank
+                           when adding a new meter.
+    :return: html page with the form to add/edit the reading
     """
-    try:
-        meter = int(request.POST.get('meter_id'))
-        reading_date = request.POST.get('reading_date')
-        reading_number = Decimal(request.POST.get('reading'))
-        remark = request.POST.get('remark')
-    except (KeyError, TypeError):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new reading.',
-                             'alert-danger')
+    if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
+        if request.user.has_perm('utilities.add_reading'):
+            _add_new_reading_from_request(request)
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing permission to add a reading, please login',
+                                 'alert-danger')
         return redirect(reverse('utilities:reading_list'))
 
-    if(meter is None or reading_date is None or reading_number is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to add a new reading.',
-                             'alert-danger')
+    if request.method == 'POST' and request.POST.get('_method', 'not_put') == 'PUT':
+        if request.user.has_perm('utilities.change_reading'):
+            _change_reading_from_request(request)
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing permission to edit reading, please login.',
+                                 'alert-danger')
+
         return redirect(reverse('utilities:reading_list'))
 
-    try:
-        meter = Meter.objects.get(pk=meter)
-    except Meter.DoesNotExist:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Unknown meter',
-                             'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
-    else:
-        new_reading = Reading.objects.create(meter=meter,
-                                             reading=reading_number,
-                                             date=datetime.\
-                                                  strptime(reading_date, '%Y-%m-%d').\
-                                                  date(),
-                                             remark=remark)
-        new_reading.save()
-        update_usage_after_new_reading(new_reading)
-    messages.add_message(request,
-                         messages.INFO,
-                         '{0} is added.'.format(new_reading),
-                         'alert-success')
-    return redirect(reverse('utilities:reading_list'))
+    #Default to GET
+    form = ReadingForm()
+    edit = False
+    if reading_id:
+        try:
+            reading_to_edit = Reading.objects.get(pk=reading_id)
+        except Reading.DoesNotExist:
+            pass
+        else:
+            form = ReadingForm(instance=reading_to_edit)
+            edit = True
+
+    return render(request,
+                  'utilities/reading_form.html',
+                  {'form': form, 'edit': edit, 'r_id': reading_id})
 
 @permission_required('utilities.delete_reading')
 def delete_reading(request):
@@ -258,7 +308,6 @@ def delete_reading(request):
         #pylint: disable=unused-variable
         reading_to_delete = Reading.objects.get(pk=reading_id)
         (deleted, deleted_reading) = reading_to_delete.delete()
-        update_usage_after_new_reading(reading_to_delete)
     except Reading.DoesNotExist:
         messages.add_message(request,
                              messages.ERROR,
@@ -278,69 +327,80 @@ def delete_reading(request):
                          'alert-danger')
     return redirect(reverse('utilities:reading_list'))
 
-@permission_required('utilities.change_reading')
-def edit_reading(request):
+def _add_new_reading_from_request(request):
     """
-    Edit a reading.
+    Add a new reading form the post data of this request. Does **NOT** check permission.
+    :param request: the user http request with the info on the new meter.
+    :return: nothing
+    """
+    form = ReadingForm(request.POST)
+    if form.is_valid():
+        form.save()
+        messages.add_message(request,
+                             messages.INFO,
+                             'Reading is added.',
+                             'alert-success')
+    else:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing key element to add a new reading.',
+                             'alert-danger')
+
+def _change_reading_from_request(request):
+    """
+    Change a meter with the data from the user request. Does **NOT** check permissions.
+
+    :param request: the user http request with the relevant data
+    :return: nothing
     """
     try:
-        reading = int(request.POST.get('reading_id'))
-        meter = int(request.POST.get('meter_id'))
-        reading_date = request.POST.get('reading_date')
-        reading_number = Decimal(request.POST.get('reading'))
-        remark = request.POST.get('remark')
-    except (KeyError, TypeError):
+        reading_to_change = Reading.objects.get(pk=request.POST['id'])
+    except (KeyError, Reading.DoesNotExist):
         messages.add_message(request,
                              messages.ERROR,
-                             'Missing key element to change the reading.',
+                             'Something went wrong with getting the old reading.',
                              'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
+    else:
+        form = ReadingForm(request.POST, instance=reading_to_change)
+        if form.is_valid():
+            form.save()
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Missing key element to change the reading.',
+                                 'alert-danger')
 
-    if(meter is None or reading_date is None or reading_number is None):
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Missing key element to change the reading.',
-                             'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
-
-    try:
-        meter = Meter.objects.get(pk=meter)
-    except Meter.DoesNotExist:
-        messages.add_message(request,
-                             messages.ERROR,
-                             'Unknown meter',
-                             'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
-
-    edited_reading = Reading.objects.get(pk=reading)
-    edited_reading.meter = meter
-    edited_reading.reading = reading_number
-    edited_reading.date = datetime.strptime(reading_date, '%Y-%m-%d').date()
-    edited_reading.remark = remark
-    edited_reading.save()
-    update_usage_after_new_reading(edited_reading)
-
-    messages.add_message(request,
-                         messages.INFO,
-                         '{0} is changed.'.format(edited_reading),
-                         'alert-success')
-    return redirect(reverse('utilities:reading_list'))
-
+#USAGES
 @login_required
 def list_usages(request):
     """
     Show all the usages of the readings.
     TODO: add paging
     TODO: make selection of meter, data, ...
-    TODO: add sorting
     """
+    #Get the sort_key from the session
+    sort_key = request.session.get('usagelist_sort_by')
+    #Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
+
+    request.session['usagelist_sort_by'] = sort_key
+
     try:
         usages = Usage.objects.all()
         if request.GET.get('m_id'):
             usages = usages.filter(meter_id=request.GET.get('m_id'))
+        if sort_key[-4:] == 'date':
+            order = '-' if sort_key[:1] == '-' else ''
+            usages = usages.order_by(order + 'year', order + 'month')
+        else:
+            usages = usages.order_by(sort_key)
     except Usage.DoesNotExist:
         pass
 
     meters = Meter.objects.all()
 
-    return render(request, 'utilities/usage_list.html', {'object_list': usages, 'meters': meters})
+    return render(request, 'utilities/usage_list.html', {'usages': usages, 'meters': meters})

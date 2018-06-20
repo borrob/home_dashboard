@@ -1,47 +1,50 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block main %}
 
     <main role="main" class="container">
 
-		<div class="card">
-			<table class="table table-hover">
-				<thead>
-					<th></th>
-					<th>Meter name</th>
-					<th>Unit</th>
-          <th></th>
-				</thead>
-				<tbody>
-					{% for m in object_list %}
-          <tr>
-					    <td>{{ m.pk }}.</td>
-					    <td>{{ m.meter_name }}</td>
-					    <td>{{ m.meter_unit }}</td>
-              {% if perms.utilities.change_meter %}
-                <td><a onclick="editmeter('{{m.meter_name}}', '{{ m.meter_unit }}')">edit</a></td>
-              {% else %}
-                <td></td>
-              {% endif %}
-          </tr>
-					{% empty %}
-                    <tr>
-					    <td colspan=4>No meters yet</td>
-					{% endfor %}
-                    </tr>
-				</tbody>
+        <div class="card">
+            <h2 style="color: var(--primary)">Meter list</h2>
+            <table class="table table-hover">
+                <thead>
+                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=id">#</a></th>
+                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=meter_name">Meter name</a></th>
+                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=meter_unit">Unit</a></th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% for m in object_list %}
+                        <tr>
+                            <td>{{ m.pk }}.</td>
+                            <td>{{ m.meter_name }}</td>
+                            <td>{{ m.meter_unit }}</td>
+                            <td>
+                            {% if perms.utilities.change_meter %}
+                                    <a href="{% url 'utilities:meter' m.id %}">
+                                    <img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
+                            {% endif %}
+                            {% if perms.utilities.delete_meter %}
+                                    <a onclick="deletemeter('{{ m.meter_name }}')"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"/></a>
+                            {% endif %}
+                            </td>
+                        </tr>
+                            {% empty %}
+                        <tr>
+                            <td colspan=4>No meters yet</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
 			</table>
 		</div>
 
 		{% if perms.utilities.add_meter %}
-			{% include 'utilities/snippets/add_meter_modal.html' %}
+            <a href="{% url 'utilities:meter' %} " type="button" class="btn btn-primary">Add new Meter</a>
 		{% endif %}
 		{% if perms.utilities.delete_meter %}
 			{% include 'utilities/snippets/delete_meter_modal.html' %}
 		{% endif %}
-    {% if perms.utilities.change_meter %}
-      {% include 'utilities/snippets/edit_meter_modal.html' %}
-    {% endif %}
 
     </main>
 

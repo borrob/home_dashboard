@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block main %}
+
+    <main role="main" class="container">
+
+        <div class="card">
+            {% if edit %}
+                <h2 style="color: var(--primary)">Edit Reading</h2>
+                <form action="{% url 'utilities:reading' %}" method="post">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="id" value="{{ r_id }}">
+            {% else %}
+                <h2 style="color: var(--primary)">New reading</h2>
+                <form action="{% url 'utilities:reading' %}" method="post">
+            {% endif %}
+                    {% csrf_token %}
+                    <table class="table">
+                        {{ form.as_table }}
+                    </table>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+		</div>
+    </main>
+
+{% endblock %}

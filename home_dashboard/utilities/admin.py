@@ -1,3 +1,10 @@
-#from django.contrib import admin
+"""
+Register models for admin pages.
+"""
+from django.contrib import admin
 
-# Register your models here.
+from .models import Meter, Reading, Usage
+
+admin.site.register(Meter)
+admin.site.register(Reading)
+admin.site.register(Usage)

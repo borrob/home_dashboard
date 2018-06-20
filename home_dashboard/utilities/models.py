@@ -9,13 +9,17 @@ from .exceptions import MeterError
 # Create your models here.
 class Meter(models.Model):
     """
-    The meer model specifies the parameters of the meter.
+    The meter model specifies the parameters of the meter.
     """
-    meter_name = models.CharField(max_length=30)
+    meter_name = models.CharField(max_length=30, unique=True)
     meter_unit = models.CharField(max_length=10)
 
     def __str__(self):
         return 'Meter ' + self.meter_name + ' with unit: ' + self.meter_unit
+
+    def __repr__(self):
+        return "Meter(meter_name='{m}', meter_unit='{u}')".format(m=self.meter_name,
+                                                                  u=self.meter_unit)
 
 class Reading(models.Model):
     """
@@ -24,13 +28,23 @@ class Reading(models.Model):
     date = models.DateField()
     reading = models.DecimalField(max_digits=10, decimal_places=2)
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
-    remark = models.CharField(max_length=255)
+    remark = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        unique_together = ('date', 'meter')
 
     def __str__(self):
         return 'Reading: {d} {m} - {r} {u}'.format(r=self.reading,
                                                    u=self.meter.meter_unit,
                                                    d=self.date,
                                                    m=self.meter.meter_name)
+
+    def __repr__(self):
+        return "Reading(date='{d}', reading='{r}', meter='{m}', remark='{rm}')" \
+                    .format(d=self.date,
+                            r=self.reading,
+                            m=self.meter.id,
+                            rm=self.remark)
 
 class Usage(models.Model):
     """
@@ -40,6 +54,23 @@ class Usage(models.Model):
     year = models.IntegerField()
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
     usage = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        unique_together = ('year', 'month', 'meter')
+
+
+    def __str__(self):
+        return "Usage: {y}-{m}: {u} {unit} for {meter}".format(y=self.year,
+                                                               m=self.month,
+                                                               u=self.usage,
+                                                               unit=self.meter.meter_unit,
+                                                               meter=self.meter.meter_name)
+
+    def __repr__(self):
+        return "Usage(month={m}, year={y}, meter={meter}, usage={u})".format(m=self.month,
+                                                                             y=self.year,
+                                                                             meter=self.meter.id,
+                                                                             u=self.usage)
 
 def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
     """
@@ -143,7 +174,7 @@ def calculate_reading_on_date(the_date, reading_1, reading_2):
     if the_date < reading_1.date or the_date > reading_2.date:
         raise ValueError('The specified date is not between the dates of the readings.')
 
-    days_between_readings = (reading_2.date - reading_1.date).days - 1
+    days_between_readings = (reading_2.date - reading_1.date).days
     days_since_reading_1 = (the_date - reading_1.date).days
     usage_between_reading = reading_2.reading - reading_1.reading
     reading_on_date = reading_1.reading \
