@@ -63,6 +63,7 @@ class MeterViewTests(TransactionTestCase):
     def test_add_meter_with_permission(self):
         """
         Test if someone with permission can add a meter (should be yes).
+        Uses the form to add the meter.
         """
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
@@ -95,6 +96,34 @@ class MeterViewTests(TransactionTestCase):
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+
+    def test_add_incomplete_meter(self):
+        """
+        Test that all the fiels should be given to add a new meter.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_name': 'missing_unit_name',
+                                         },
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing key element to add a new meter.')
+
+    def test_add_incomplete_unit_name(self):
+        """
+        Test that all the fiels should be given to add a new meter.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'unit_name': 'missing_meter_name',
+                                         },
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Missing key element to add a new meter.')
 
     def test_remove_meter(self):
         """
