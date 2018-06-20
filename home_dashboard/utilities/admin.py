@@ -1,3 +1,6 @@
+"""
+Register models for admin pages.
+"""
 from django.contrib import admin
 
 from .models import Meter, Reading, Usage
