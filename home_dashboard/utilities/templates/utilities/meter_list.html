@@ -7,6 +7,15 @@
 
         <div class="card">
             <h2 style="color: var(--primary)">Meter list</h2>
+            {% if object_list.has_other_pages %}
+                <div>
+                    <ul class="pagination">
+                        {% for p in object_list.paginator.page_range %}
+                            <li class="page-item" id="page-item-{{ p }}"><a href="?page={{ p }}" class="page-link">{{ p }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
             <table class="table table-hover">
                 <thead>
                     <th><a href="{% url 'utilities:meter_list' %}?sort_by=id">#</a></th>
@@ -48,4 +57,11 @@
 
     </main>
 
+{% endblock %}
+
+
+{% block script %}
+    <script>
+        $( () => $('#page-item-{{ current_page }}').addClass('active'));
+    </script>
 {% endblock %}

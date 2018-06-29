@@ -3,51 +3,48 @@ Defining the utilities URL links and their respones.
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.conf import settings
+from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.utils.datastructures import MultiValueDictKeyError
-from django.views import generic
 from django.shortcuts import render, redirect, reverse
 
 from .forms import NewMeterForm, ReadingForm
 from .models import Meter, Reading, Usage
 
 #METER
-class ListMeters(LoginRequiredMixin, generic.ListView): # pylint: disable=too-many-ancestors
+@login_required()
+def ShowMeters(request):
     """
-    Show a list of all the meters.
+    Render the page with the meters.
 
-    TODO: add paging
-    TODO: add selecting of specific meter
-    TODO: add selection of specific year/month
+    Keeping on eye on the sorting list and the paging.
+
+    :param request: the user http request
+    :return: the html page with the meters as a http response
     """
-    model = Meter
-    template = 'utilities/meter_list.html'
+    # Get the sort_key from the session
+    sort_key = request.session.get('meterlist_sort_by', None)
+    # Override with the sort_key that the user iq requesting.
+    try:
+        sort_key_request = request.GET['sort_by']
+        sort_key = sort_key_request if sort_key != sort_key_request else '-' + sort_key_request
+    except MultiValueDictKeyError:
+        sort_key = sort_key if sort_key else 'id'
 
-    def get_queryset(self):
-        """
-        Get the sorted queryset.
+    request.session['meterlist_sort_by'] = sort_key
+    queryset = Meter.objects.order_by(sort_key)
 
-        The set is sorted on the field the user is requesting (with the 'sort_by' url
-        parameter), or if that is not available the column stored in the session, or
-        otherwise the ID field as default.
+    page_id = int(request.GET.get('page', 1))
+    paginator = Paginator(queryset, settings.PAGE_SIZE)
+    page_id = paginator.num_pages if page_id > paginator.num_pages else page_id
+    try:
+        page = paginator.page(page_id)
+    except:
+        page_id = 1
+        page = paginator.page(page_id)
 
-        Takes care of sorting asc/desc.
-
-        :return: the sorted meter queryset
-        """
-        #Get the sort_key from the session
-        sort_key = self.request.session.get('meterlist_sort_by')
-        #Override with the sort_key that the user iq requesting.
-        try:
-            sort_key_request = self.request.GET['sort_by']
-            sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
-        except MultiValueDictKeyError:
-            sort_key = sort_key if sort_key else 'id'
-
-        self.request.session['meterlist_sort_by'] = sort_key
-        queryset = Meter.objects.order_by(sort_key)
-        return queryset
+    return render(request, 'utilities/meter_list.html', {'object_list': page, 'current_page': page_id})
 
 @login_required()
 def meter(request, meter_id=None):
