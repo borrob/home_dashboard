@@ -275,27 +275,23 @@ def reading(request, reading_id=None):
     :return: html page with the form to add/edit the reading
     """
     if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
-        if request.user.has_perm('utilities.add_reading'):
-            _add_new_reading_from_request(request)
-        else:
-            messages.add_message(request,
-                                 messages.ERROR,
-                                 'Missing permission to add a reading, please login',
-                                 'alert-danger')
-        return redirect(reverse('utilities:reading_list'))
+        return _process_new_reading(request)
 
     if request.method == 'POST' and request.POST.get('_method', 'not_put') == 'PUT':
-        if request.user.has_perm('utilities.change_reading'):
-            _change_reading_from_request(request)
-        else:
-            messages.add_message(request,
-                                 messages.ERROR,
-                                 'Missing permission to edit reading, please login.',
-                                 'alert-danger')
+        return _process_edit_reading(request)
 
-        return redirect(reverse('utilities:reading_list'))
+    # Default to GET: show the form
+    return _process_show_reading_form(reading_id, request)
 
-    # Default to GET
+
+def _process_show_reading_form(reading_id, request):
+    """
+    Initialise the reading form with either an empty reading or the specified reading.
+
+    :param reading_id: if used, the id of the reading to edit (can be left None)
+    :param request: the user http request
+    :return: renderd html form to add/edit a reading
+    """
     form = ReadingForm()
     edit = False
     if reading_id:
@@ -306,10 +302,43 @@ def reading(request, reading_id=None):
         else:
             form = ReadingForm(instance=reading_to_edit)
             edit = True
-
     return render(request,
                   'utilities/reading_form.html',
                   {'form': form, 'edit': edit, 'r_id': reading_id})
+
+
+def _process_edit_reading(request):
+    """
+    Process the action that the users wants to edit an existing reading.
+
+    :param request: the user http request
+    :return: render the form page with the data of the specified reading
+    """
+    if request.user.has_perm('utilities.change_reading'):
+        _change_reading_from_request(request)
+    else:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing permission to edit reading, please login.',
+                             'alert-danger')
+    return redirect(reverse('utilities:reading_list'))
+
+
+def _process_new_reading(request):
+    """
+    Process the action that the users wants to add a new reading.
+
+    :param request: the http request from the user
+    :return: render the form page
+    """
+    if request.user.has_perm('utilities.add_reading'):
+        _add_new_reading_from_request(request)
+    else:
+        messages.add_message(request,
+                             messages.ERROR,
+                             'Missing permission to add a reading, please login',
+                             'alert-danger')
+    return redirect(reverse('utilities:reading_list'))
 
 
 @permission_required('utilities.delete_reading')
