@@ -12,7 +12,8 @@ from django.shortcuts import render, redirect, reverse
 from .forms import NewMeterForm, ReadingForm
 from .models import Meter, Reading, Usage
 
-#METER
+
+# METER
 @login_required()
 def show_meters(request):
     """
@@ -53,6 +54,7 @@ def show_meters(request):
                   'utilities/meter_list.html',
                   {'object_list': page, 'current_page': page_id})
 
+
 @login_required()
 def meter(request, meter_id=None):
     """
@@ -79,7 +81,7 @@ def meter(request, meter_id=None):
 
         return redirect(reverse('utilities:meter_list'))
 
-    #Default to GET
+    # Default to GET
     form = NewMeterForm()
     edit = False
     if meter_id:
@@ -96,9 +98,11 @@ def meter(request, meter_id=None):
                   'utilities/meter_form.html',
                   {'form': form, 'edit': edit, 'm_id': meter_id})
 
+
 def _add_new_meter_from_request(request):
     """
     Add a new meter form the post data of this request. Does **NOT** check permission.
+
     :param request: the user http request with the info on the new meter.
     :return: nothing
     """
@@ -123,6 +127,7 @@ def _add_new_meter_from_request(request):
                              messages.ERROR,
                              'Missing key element to add a new meter.',
                              'alert-danger')
+
 
 def _change_meter_from_request(request):
     """
@@ -163,6 +168,7 @@ def _change_meter_from_request(request):
                                  'Missing key element to change meter.',
                                  'alert-danger')
 
+
 @permission_required('utilities.delete_meter')
 def delete_meter(request):
     """
@@ -186,7 +192,7 @@ def delete_meter(request):
 
     deleted = 0
     try:
-        #pylint: disable=unused-variable
+        # pylint: disable=unused-variable
         (deleted, deleted_meter) = Meter.objects.get(meter_name=meter_name).delete()
     except Meter.DoesNotExist:
         messages.add_message(request,
@@ -208,23 +214,23 @@ def delete_meter(request):
                          'alert-danger')
     return redirect(reverse('utilities:meter_list'))
 
-#READINGS
+
+# READINGS
 @login_required
 def list_readings(request):
     """
     Show all the readings.
-    TODO: add paging.
     """
     try:
         readings = Reading.objects.all()
         if request.GET.get('m_id'):
             readings = readings.filter(meter_id=request.GET.get('m_id'))
     except Reading.DoesNotExist:
-        pass
+        readings = []
 
-    #Get the sort_key from the session
+    # Get the sort_key from the session
     sort_key = request.session.get('readinglist_sort_by')
-    #Override with the sort_key that the user iq requesting.
+    # Override with the sort_key that the user iq requesting.
     try:
         sort_key_request = request.GET['sort_by']
         sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
@@ -234,11 +240,28 @@ def list_readings(request):
     request.session['readinglist_sort_by'] = sort_key
     readings = readings.order_by(sort_key)
 
+    # deal with paging
+    try:
+        page_id = int(request.GET.get('page', 1))
+    except ValueError:
+        # catching if 'page' is not an integer
+        page_id = 1
+    paginator = Paginator(readings, settings.PAGE_SIZE)
+    page_id = paginator.num_pages if page_id > paginator.num_pages else page_id
+    try:
+        page = paginator.page(page_id)
+    except EmptyPage:
+        page_id = 1
+        page = paginator.page(page_id)
+
     meters = Meter.objects.all()
+
     return render(request,
                   'utilities/reading_list.html',
-                  {'readings': readings,
+                  {'readings': page,
+                   'current_page': page_id,
                    'meters': meters})
+
 
 @login_required()
 def reading(request, reading_id=None):
@@ -272,7 +295,7 @@ def reading(request, reading_id=None):
 
         return redirect(reverse('utilities:reading_list'))
 
-    #Default to GET
+    # Default to GET
     form = ReadingForm()
     edit = False
     if reading_id:
@@ -287,6 +310,7 @@ def reading(request, reading_id=None):
     return render(request,
                   'utilities/reading_form.html',
                   {'form': form, 'edit': edit, 'r_id': reading_id})
+
 
 @permission_required('utilities.delete_reading')
 def delete_reading(request):
@@ -311,7 +335,7 @@ def delete_reading(request):
 
     deleted = 0
     try:
-        #pylint: disable=unused-variable
+        # pylint: disable=unused-variable
         reading_to_delete = Reading.objects.get(pk=reading_id)
         (deleted, deleted_reading) = reading_to_delete.delete()
     except Reading.DoesNotExist:
@@ -333,9 +357,11 @@ def delete_reading(request):
                          'alert-danger')
     return redirect(reverse('utilities:reading_list'))
 
+
 def _add_new_reading_from_request(request):
     """
     Add a new reading form the post data of this request. Does **NOT** check permission.
+
     :param request: the user http request with the info on the new meter.
     :return: nothing
     """
@@ -351,6 +377,7 @@ def _add_new_reading_from_request(request):
                              messages.ERROR,
                              'Missing key element to add a new reading.',
                              'alert-danger')
+
 
 def _change_reading_from_request(request):
     """
@@ -376,7 +403,8 @@ def _change_reading_from_request(request):
                                  'Missing key element to change the reading.',
                                  'alert-danger')
 
-#USAGES
+
+# USAGES
 @login_required
 def list_usages(request):
     """
@@ -384,9 +412,9 @@ def list_usages(request):
     TODO: add paging
     TODO: make selection of meter, data, ...
     """
-    #Get the sort_key from the session
+    # Get the sort_key from the session
     sort_key = request.session.get('usagelist_sort_by')
-    #Override with the sort_key that the user iq requesting.
+    # Override with the sort_key that the user iq requesting.
     try:
         sort_key_request = request.GET['sort_by']
         sort_key = sort_key_request if sort_key != sort_key_request else '-'+sort_key_request
@@ -405,7 +433,7 @@ def list_usages(request):
         else:
             usages = usages.order_by(sort_key)
     except Usage.DoesNotExist:
-        pass
+        usages = []
 
     meters = Meter.objects.all()
 

@@ -8,7 +8,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-	  <form action="{% url 'utilities:edit_reading' %}" method='post'>
+	  <form action="{% url 'utilities:reading' %}" method='post'>
 	  {% csrf_token %}
       <div class="modal-body">
         <input type="hidden" name="reading_id" id="editoldReading" />
