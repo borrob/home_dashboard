@@ -6,6 +6,15 @@
     <main role="main" class="container">
 
 		<div class="card">
+            {% if usages.has_other_pages %}
+                <div>
+                    <ul class="pagination">
+                        {% for p in usages.paginator.page_range %}
+                            <li class="page-item" id="page-item-{{ p }}"><a href="?page={{ p }}" class="page-link">{{ p }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
             <div class="row">
                 <div class="col">
                     <div class="btn-group" role="group">
@@ -54,5 +63,8 @@
             {% else %}
                 $('#meter_all').removeClass('btn-secondary').addClass('btn-primary');
             {% endif %}
+        </script>
+        <script>
+            $( () => $('#page-item-{{ current_page }}').addClass('active'));
         </script>
 {% endblock %}

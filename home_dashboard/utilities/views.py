@@ -409,7 +409,7 @@ def _change_reading_from_request(request):
 def list_usages(request):
     """
     Show all the usages of the readings.
-    TODO: add paging
+
     TODO: make selection of meter, data, ...
     """
     # Get the sort_key from the session
@@ -435,6 +435,24 @@ def list_usages(request):
     except Usage.DoesNotExist:
         usages = []
 
+    # deal with paging
+    try:
+        page_id = int(request.GET.get('page', 1))
+    except ValueError:
+        # catching if 'page' is not an integer
+        page_id = 1
+    paginator = Paginator(usages, settings.PAGE_SIZE)
+    page_id = paginator.num_pages if page_id > paginator.num_pages else page_id
+    try:
+        page = paginator.page(page_id)
+    except EmptyPage:
+        page_id = 1
+        page = paginator.page(page_id)
+
     meters = Meter.objects.all()
 
-    return render(request, 'utilities/usage_list.html', {'usages': usages, 'meters': meters})
+    return render(request,
+                  'utilities/usage_list.html',
+                  {'usages': page,
+                   'current_page': page_id,
+                   'meters': meters})
