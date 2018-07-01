@@ -36,21 +36,21 @@
                 </tr></thead>
 				<tbody>
 					{% for r in readings %}
-          <tr>
-					    <td>{{ r.pk }}.</td>
-                        <td>{{ r.date | date:'d-m-Y' }}</td>
-					    <td>{{ r.meter.meter_name }}</td>
-                        <td>{{ r.reading }}</td>
-					    <td>{{ r.meter.meter_unit }}</td>
-                        <td>
-                            {% if perms.utilities.delete_reading %}
-                              <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"/></a>
-                            {% endif %}
-                            {% if perms.utilities.change_reading %}
-                              <a onclick="edit_reading({{ r.pk }}, {{r.meter_id}}, '{{r.date | date:'Y-m-d'}}', {{r.reading}}, '{{r.remark}}')"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
-                            {% endif %}
-                        </td>
-          </tr>
+                        <tr>
+                            <td>{{ r.pk }}.</td>
+                            <td>{{ r.date | date:'d-m-Y' }}</td>
+                            <td>{{ r.meter.meter_name }}</td>
+                            <td>{{ r.reading }}</td>
+                            <td>{{ r.meter.meter_unit }}</td>
+                            <td>
+                                {% if perms.utilities.delete_reading %}
+                                  <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"/></a>
+                                {% endif %}
+                                {% if perms.utilities.change_reading %}
+                                    <a href="{% url 'utilities:reading' r.pk %}"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
+                                {% endif %}
+                            </td>
+                        </tr>
 					{% empty %}
                     <tr>
 					    <td colspan=4>No readings yet</td>
@@ -60,9 +60,11 @@
 			</table>
 		</div>
 
-        {% include 'utilities/snippets/add_reading_model.html' %}
+        {% if perms.utilities.add_reading %}
+            <a href="{% url 'utilities:reading' %} " type="button" class="btn btn-primary">Add new Reading</a>
+		{% endif %}
+
         {% include 'utilities/snippets/delete_reading_modal.html' %}
-        {% include 'utilities/snippets/edit_reading_modal.html' %}
 
     </main>
 

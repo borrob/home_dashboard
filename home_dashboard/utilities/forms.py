@@ -12,7 +12,7 @@ class NewMeterForm(forms.Form):
     meter_name = forms.CharField(max_length=30)
     unit_name = forms.CharField(max_length=10)
 
-    #Add CSS-class to the form
+    # Add CSS-class to the form
     meter_name.widget.attrs['class'] = 'form-control' # pylint: disable=no-member
     unit_name.widget.attrs['class'] = 'form-control' # pylint: disable=no-member
 
