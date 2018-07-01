@@ -4,7 +4,7 @@ Defining the utilities URL links and their respones.
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.conf import settings
-from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, Paginator
 from django.db import IntegrityError
 from django.utils.datastructures import MultiValueDictKeyError
 from django.shortcuts import render, redirect, reverse
@@ -14,7 +14,7 @@ from .models import Meter, Reading, Usage
 
 #METER
 @login_required()
-def ShowMeters(request):
+def show_meters(request):
     """
     Render the page with the meters.
 
@@ -35,16 +35,23 @@ def ShowMeters(request):
     request.session['meterlist_sort_by'] = sort_key
     queryset = Meter.objects.order_by(sort_key)
 
-    page_id = int(request.GET.get('page', 1))
+    # deal with paging
+    try:
+        page_id = int(request.GET.get('page', 1))
+    except ValueError:
+        # catching if 'page' is not an integer
+        page_id = 1
     paginator = Paginator(queryset, settings.PAGE_SIZE)
     page_id = paginator.num_pages if page_id > paginator.num_pages else page_id
     try:
         page = paginator.page(page_id)
-    except:
+    except EmptyPage:
         page_id = 1
         page = paginator.page(page_id)
 
-    return render(request, 'utilities/meter_list.html', {'object_list': page, 'current_page': page_id})
+    return render(request,
+                  'utilities/meter_list.html',
+                  {'object_list': page, 'current_page': page_id})
 
 @login_required()
 def meter(request, meter_id=None):

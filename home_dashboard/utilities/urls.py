@@ -8,7 +8,7 @@ from . import views
 app_name = 'utilities'
 
 urlpatterns = [
-    path('meterlist', views.ShowMeters, name='meter_list'),
+    path('meterlist', views.show_meters, name='meter_list'),
     path('meter/', views.meter, name='meter'),
     path('meter/<int:meter_id>/', views.meter, name='meter'),
     path('deletemeter', views.delete_meter, name='delete_meter'),

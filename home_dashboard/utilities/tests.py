@@ -282,7 +282,7 @@ class MeterViewTests(TransactionTestCase):
         Test there is paging on the meterview
         """
         # Create enough meter to fit on 1 page
-        for i in range(1,settings.PAGE_SIZE + 1):
+        for i in range(1, settings.PAGE_SIZE + 1):
             m = Meter.objects.create(meter_name='m-{i}'.format(i=i), meter_unit='X')
             m.save()
 
