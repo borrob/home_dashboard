@@ -17,12 +17,12 @@
                 </div>
             {% endif %}
             <table class="table table-hover">
-                <thead>
-                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=id">#</a></th>
-                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=meter_name">Meter name</a></th>
-                    <th><a href="{% url 'utilities:meter_list' %}?sort_by=meter_unit">Unit</a></th>
-                    <th></th>
-                </thead>
+                <thead><tr>
+                    <td><a href="{% url 'utilities:meter_list' %}?sort_by=id">#</a></td>
+                    <td><a href="{% url 'utilities:meter_list' %}?sort_by=meter_name">Meter name</a></td>
+                    <td><a href="{% url 'utilities:meter_list' %}?sort_by=meter_unit">Unit</a></td>
+                    <td></td>
+                </tr></thead>
                 <tbody>
                     {% for m in object_list %}
                         <tr>

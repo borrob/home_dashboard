@@ -2,6 +2,7 @@
 Testing of all the classes and endpoints for the utilities app.
 """
 import datetime
+from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.db import IntegrityError
 from django.test import Client, TestCase, TransactionTestCase
@@ -275,6 +276,32 @@ class MeterViewTests(TransactionTestCase):
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Missing key element to change meter.')
+
+    def test_paging_of_meter(self):
+        """
+        Test there is paging on the meterview
+        """
+        # Create enough meter to fit on 1 page
+        for i in range(1,settings.PAGE_SIZE + 1):
+            m = Meter.objects.create(meter_name='m-{i}'.format(i=i), meter_unit='X')
+            m.save()
+
+        # all there meters should still fit on 1 page
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:meter_list'))
+        self.assertNotContains(response, 'pagination')
+
+        # add one more meter -> now there should be pagination
+        m = Meter.objects.create(meter_name='m-new-page', meter_unit='X')
+        m.save()
+
+        response = self.client.get(reverse('utilities:meter_list'))
+        self.assertContains(response, 'pagination')
+
+        # testing page2
+        url = reverse('utilities:meter_list') + '?page=2'
+        response = self.client.get(url)
+        self.assertContains(response, 'm-new-page')
 
 
 class ReadingViewTests(TestCase):
