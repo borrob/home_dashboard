@@ -9,9 +9,9 @@ from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .exceptions import MeterError
+from .logic import update_usage_after_new_reading, calculate_reading_on_date
 from .models import Meter, Reading, Usage
-from .models import calculate_reading_on_date
-from .models import update_usage_after_new_reading
+
 
 # Create your tests here.
 

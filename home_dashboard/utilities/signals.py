@@ -1,7 +1,9 @@
 """
 Supplies the signals for the utility app.
 """
-from .models import Reading, update_usage_after_new_reading
+from .logic import update_usage_after_new_reading
+from .models import Reading
+
 
 def reading_saved(sender, instance, **kwargs): # pylint: disable=unused-argument
     """
