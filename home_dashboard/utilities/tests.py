@@ -617,3 +617,48 @@ class UsageTests(TestCase):
                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
+
+    def test_update_to_different_meter(self):
+        """
+        Test that changing the meter of a reading recalculates the usages of both the new and the old meter.
+        """
+        meter1 = Meter(meter_name='testmeter1', meter_unit='m')
+        meter1.save()
+        reading1_meter1 = Reading(date=datetime.date(2018, 1, 1),
+                            reading=0,
+                            meter=meter1)
+        reading1_meter1.save()
+        reading2_meter1 = Reading(date=datetime.date(2018, 2, 1),
+                            reading=10,
+                            meter=meter1)
+        reading2_meter1.save()
+        usage1 = Usage.objects.get(meter=meter1)
+        self.assertTrue(usage1.usage==10)
+
+        meter2 = Meter(meter_name='testmeter2', meter_unit='m')
+        meter2.save()
+        reading1_meter2 = Reading(date=datetime.date(2018, 1, 1),
+                                  reading=0,
+                                  meter=meter2)
+        reading1_meter2.save()
+        reading2_meter2 = Reading(date=datetime.date(2018, 2, 1),
+                                  reading=100,
+                                  meter=meter2)
+        reading2_meter2.save()
+        usage2 = Usage.objects.get(meter=meter2)
+        self.assertTrue(usage2.usage==100)
+
+        reading3 = Reading(date=datetime.date(2018, 3, 1),
+                                  reading=200,
+                                  meter=meter1)
+
+        reading3.save()
+        usage3 = Usage.objects.filter(meter=meter1).order_by('-id')[0]
+        self.assertTrue(usage3.usage==190)
+        reading3.meter = meter2
+        reading3.save()
+
+        usage4 = Usage.objects.filter(meter=meter1).order_by('-id')[0]
+        self.assertFalse(usage4.usage==190)
+        usage5 = Usage.objects.filter(meter=meter2).order_by('-id')[0]
+        self.assertEqual(usage5.usage, 100.0)

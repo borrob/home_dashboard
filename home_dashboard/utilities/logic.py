@@ -24,6 +24,7 @@ def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
     #clean up
     Usage.objects.filter(year__gte=year_before, month__gte=month_before).\
         filter(year__lte=year_after, month__lte=month_after).\
+        filter(meter=reading.meter).\
         delete()
 
     #calculate new usages
