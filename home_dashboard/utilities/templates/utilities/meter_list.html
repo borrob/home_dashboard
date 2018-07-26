@@ -49,7 +49,7 @@
 		</div>
 
 		{% if perms.utilities.add_meter %}
-            <a href="{% url 'utilities:meter' %} " type="button" class="btn btn-primary">Add new Meter</a>
+            <button onclick="location.href='{% url 'utilities:meter' %}'" type="button" class="btn btn-primary">Add new Meter</button>
 		{% endif %}
 		{% if perms.utilities.delete_meter %}
 			{% include 'utilities/snippets/delete_meter_modal.html' %}

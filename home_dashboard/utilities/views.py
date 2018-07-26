@@ -110,7 +110,7 @@ def _add_new_meter_from_request(request):
     if form.is_valid():
         try:
             new_meter = Meter.objects.create(meter_name=form.cleaned_data['meter_name'],
-                                             meter_unit=form.cleaned_data['unit_name'])
+                                             meter_unit=form.cleaned_data['meter_unit'])
             new_meter.save()
         except IntegrityError:
             messages.add_message(request,

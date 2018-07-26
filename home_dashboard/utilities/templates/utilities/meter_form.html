@@ -19,7 +19,7 @@
                     <table class="table">
                         {{ form.as_table }}
                     </table>
-                    <button type="submit" class="btn btn-primary">Submit</button><a href="{% url 'utilities:meter_list' %}" type="button" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Submit</button><button onclick="location.href='{% url 'utilities:meter_list' %}'" type="button" class="btn btn-secondary">Cancel</button>
                 </form>
 		</div>
     </main>
