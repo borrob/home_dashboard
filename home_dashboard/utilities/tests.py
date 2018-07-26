@@ -520,6 +520,40 @@ class ReadingViewTests(TestCase):
         else:
             assert(False), 'Usage should have been deleted'
 
+    def test_paging_readings(self):
+        """
+        Test the paging of readings.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        # Create enough readings to fit on 1 page
+        for i in range(1, settings.PAGE_SIZE + 1):
+            reading = Reading(date=datetime.date(2018, 2, i),
+                              reading=10 * i,
+                              meter=meter)
+            reading.save()
+
+        # all there meters should still fit on 1 page
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:reading_list'))
+        self.assertNotContains(response, 'pagination')
+
+        # add one more reading -> now there should be pagination
+        reading = Reading(date=datetime.date(2018, 2, 20),
+                          reading=2000,
+                          meter=meter)
+        reading.save()
+
+        response = self.client.get(reverse('utilities:reading_list'))
+        self.assertContains(response, 'pagination')
+
+        # testing page2
+        url = reverse('utilities:reading_list') + '?page=2'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'page-item-2')
+
+
 class UsageTests(TestCase):
     """
     Test the usage.
