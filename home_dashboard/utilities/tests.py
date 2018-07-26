@@ -696,4 +696,3 @@ class UsageTests(TestCase):
         self.assertFalse(usage4.usage == 190)
         usage5 = Usage.objects.filter(meter=meter2).order_by('-id')[0]
         self.assertEqual(usage5.usage, 100.0)
-
