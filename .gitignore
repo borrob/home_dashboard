@@ -67,6 +67,7 @@ docs/_build/
 .venv
 env/
 env.bak/
+.idea
 
 #MAC OS
 .DS_Store
