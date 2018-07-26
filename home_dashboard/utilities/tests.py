@@ -13,8 +13,6 @@ from .logic import update_usage_after_new_reading, calculate_reading_on_date
 from .models import Meter, Reading, Usage
 
 
-# Create your tests here.
-
 class MeterViewTests(TransactionTestCase):
     """
     Test the functionality of the Meter endpoint.
@@ -255,6 +253,7 @@ class MeterViewTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
         self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+
     def test_edit_incomplete_meter(self):
         """
         Test that all the fiels should be given to add a changed meter.
@@ -697,3 +696,4 @@ class UsageTests(TestCase):
         self.assertFalse(usage4.usage == 190)
         usage5 = Usage.objects.filter(meter=meter2).order_by('-id')[0]
         self.assertEqual(usage5.usage, 100.0)
+
