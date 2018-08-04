@@ -91,7 +91,7 @@ def meter(request, meter_id=None):
             pass
         else:
             form = NewMeterForm(initial={'meter_name': meter_to_edit.meter_name,
-                                         'unit_name': meter_to_edit.meter_unit})
+                                         'meter_unit': meter_to_edit.meter_unit})
             edit = True
 
     return render(request,
@@ -125,7 +125,7 @@ def _add_new_meter_from_request(request):
     else:
         messages.add_message(request,
                              messages.ERROR,
-                             'Missing key element to add a new meter.',
+                             form.errors.get(list(form.errors.keys())[0])[0],
                              'alert-danger')
 
 
@@ -139,6 +139,7 @@ def _change_meter_from_request(request):
     :return: nothing
     """
     form = NewMeterForm(request.POST)
+    messages.error(request, "Woot!")
     try:
         meter_to_change = Meter.objects.get(pk=form.data.get('id'))
     except (KeyError, Meter.DoesNotExist):
@@ -147,26 +148,33 @@ def _change_meter_from_request(request):
                              'Something went wrong with getting the old meter.',
                              'alert-danger')
     else:
-        if form.is_valid():
-            try:
-                meter_to_change.meter_name = form.cleaned_data['meter_name']
-                meter_to_change.meter_unit = form.cleaned_data['unit_name']
-                meter_to_change.save()
-            except IntegrityError:
-                messages.add_message(request,
-                                     messages.ERROR,
-                                     'Meter name is already taken. Cannot add a double entry.',
-                                     'alert-danger')
-            else:
-                messages.add_message(request,
-                                     messages.INFO,
-                                     'Meter {0} is changed.'.format(meter_to_change.meter_name),
-                                     'alert-success')
-        else:
+        meter_to_change.full_clean()
+        try:
+            meter_to_change.meter_name = form.cleaned_data['meter_name']
+            if Meter.objects.filter(meter_name=meter_to_change.meter_name).exclude(pk=meter_to_change.id).count() != 0:
+                raise IntegrityError
+        except (IntegrityError, KeyError):
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Missing key element to change meter.',
+                                 'Meter name is already taken. Cannot add a double entry.',
                                  'alert-danger')
+        except (KeyError, AttributeError):
+            pass
+        else:
+            try:
+                meter_to_change.meter_unit = form.cleaned_data['meter_unit']
+            except (KeyError, AttributeError):
+                pass
+
+            meter_to_change.save()
+            #TODO check inbouwen of meter al bestaat
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Meter {0} is changed.'.format(meter_to_change.meter_name),
+                                 'alert-success')
+    print('message from change meter: ', messages)
+    print('')
+    messages.add_message(request, messages.ERROR,'sf')
 
 
 @permission_required('utilities.delete_meter')

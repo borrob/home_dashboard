@@ -1,7 +1,7 @@
 """
 Testing of all the classes and endpoints for the utilities app.
 """
-import datetime
+import datetime, time
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.db import IntegrityError
@@ -54,7 +54,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'test',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
@@ -69,7 +69,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
@@ -84,17 +84,17 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
         self.assertContains(response, 'testmeter')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+        self.assertContains(response, 'Meter name already exists')
 
     def test_add_incomplete_meter(self):
         """
@@ -104,13 +104,13 @@ class MeterViewTests(TransactionTestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'meter_name': 'missing_unit_name',
+                                    data={'meter_name': 'missing_meter_unit',
                                          },
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Missing key element to add a new meter.')
+        self.assertContains(response, 'field is required')
 
-    def test_add_incomplete_unit_name(self):
+    def test_add_incomplete_meter_unit(self):
         """
         Test that all the fiels should be given to add a new meter.
         """
@@ -118,11 +118,11 @@ class MeterViewTests(TransactionTestCase):
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'unit_name': 'missing_meter_name',
+                                    data={'meter_unit': 'missing_meter_name',
                                          },
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Missing key element to add a new meter.')
+        self.assertContains(response, 'field is required')
 
     def test_remove_meter(self):
         """
@@ -133,7 +133,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'testmeter'},
@@ -152,7 +152,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'testmeter'},
@@ -172,7 +172,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'NONEXISTING'},
@@ -191,11 +191,11 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 's',
+                                          'meter_unit': 's',
                                           'new_name': 'thenewmeter',
                                           '_method': 'PUT'},
                                     follow=True)
@@ -213,11 +213,11 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         m_id = Meter.objects.get(meter_name='testmeter').id
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'unit_name': 's',
+                                    data={'meter_unit': 's',
                                           'meter_name': 'thenewmeter',
                                           '_method': 'PUT',
                                           'id': m_id},
@@ -237,44 +237,23 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         m_id = Meter.objects.get(meter_name='testmeter').id
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'nametaken',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'unit_name': 's',
+                                    data={'meter_unit': 's',
                                           'meter_name': 'nametaken',
                                           '_method': 'PUT',
                                           'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
+        print(response.content)
         self.assertContains(response, "testmeter")
-        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
-
-    def test_edit_incomplete_meter(self):
-        """
-        Test that all the fiels should be given to add a changed meter.
-        """
-        p = Permission.objects.get(name='Can add meter')
-        p2 = Permission.objects.get(name='Can change meter')
-        self.user.user_permissions.add(p)
-        self.user.user_permissions.add(p2)
-        self.client.login(username='testuser', password='q2w3E$R%')
-        self.client.post(reverse('utilities:meter'),
-                         data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
-                         follow=True)
-        m_id = Meter.objects.get(meter_name='testmeter').id
-        response = self.client.post(reverse('utilities:meter'),
-                                    data={'meter_name': 'missing_unit_name',
-                                          '_method': 'PUT',
-                                          'id': m_id},
-                                    follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Missing key element to change meter.')
+        self.assertContains(response, 'already taken')
 
     def test_paging_of_meter(self):
         """
