@@ -251,7 +251,6 @@ class MeterViewTests(TransactionTestCase):
                                           'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        print(response.content)
         self.assertContains(response, "testmeter")
         self.assertContains(response, 'already taken')
 

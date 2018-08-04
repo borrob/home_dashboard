@@ -12,6 +12,11 @@ from django.shortcuts import render, redirect, reverse
 from .forms import NewMeterForm, ReadingForm
 from .models import Meter, Reading, Usage
 
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger('home_dashboard_log')
+
 
 # METER
 @login_required()
@@ -74,6 +79,7 @@ def meter(request, meter_id=None):
         if request.user.has_perm('utilities.change_meter'):
             _change_meter_from_request(request)
         else:
+            logger.debug('User doesn\'t have permission to change the meter.')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Missing permission to edit meter, please login.',
@@ -138,28 +144,28 @@ def _change_meter_from_request(request):
     :param request: the user http request with the relevant data
     :return: nothing
     """
+    logger.debug("Calling _change_meter_from_request")
     form = NewMeterForm(request.POST)
-    messages.error(request, "Woot!")
     try:
         meter_to_change = Meter.objects.get(pk=form.data.get('id'))
     except (KeyError, Meter.DoesNotExist):
+        logger.error(f'Something went really wrong with getting the old meter (id = {form.data.get("id")}).')
         messages.add_message(request,
                              messages.ERROR,
                              'Something went wrong with getting the old meter.',
                              'alert-danger')
     else:
-        meter_to_change.full_clean()
+        form.full_clean()
         try:
             meter_to_change.meter_name = form.cleaned_data['meter_name']
             if Meter.objects.filter(meter_name=meter_to_change.meter_name).exclude(pk=meter_to_change.id).count() != 0:
                 raise IntegrityError
         except (IntegrityError, KeyError):
+            logger.error('Tried changing a meter name to an already existing one.')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Meter name is already taken. Cannot add a double entry.',
                                  'alert-danger')
-        except (KeyError, AttributeError):
-            pass
         else:
             try:
                 meter_to_change.meter_unit = form.cleaned_data['meter_unit']
@@ -167,14 +173,11 @@ def _change_meter_from_request(request):
                 pass
 
             meter_to_change.save()
-            #TODO check inbouwen of meter al bestaat
+            logger.info(f'Meter {meter_to_change.meter_name} changed successfully.')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Meter {0} is changed.'.format(meter_to_change.meter_name),
                                  'alert-success')
-    print('message from change meter: ', messages)
-    print('')
-    messages.add_message(request, messages.ERROR,'sf')
 
 
 @permission_required('utilities.delete_meter')
