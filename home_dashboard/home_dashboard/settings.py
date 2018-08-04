@@ -158,7 +158,8 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(pathname)s, line %(lineno)d (%(funcName)s): %(message)s'
+            'format': '%(levelname)s %(asctime)s %(pathname)s, line %(lineno)d (%(funcName)s): '
+                      '%(message)s'
         },
         'simple': {
             'format': '%(levelname)s %(message)s'

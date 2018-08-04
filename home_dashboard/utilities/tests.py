@@ -1,7 +1,7 @@
 """
 Testing of all the classes and endpoints for the utilities app.
 """
-import datetime, time
+import datetime
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.db import IntegrityError
