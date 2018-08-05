@@ -134,7 +134,7 @@ def _add_new_meter_from_request(request):
                                  'Meter {0} is added.'.format(new_meter.meter_name),
                                  'alert-success')
     else:
-        LOGGER.warning('Could not save new meter; ' + list(form.errors.keys())[0])
+        LOGGER.warning(f'Could not save new meter {list(form.errors.keys())[0]}.')
         messages.add_message(request,
                              messages.ERROR,
                              form.errors.get(list(form.errors.keys())[0])[0],
