@@ -1,6 +1,8 @@
 """
 Defining the utilities URL links and their respones.
 """
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.conf import settings
@@ -11,6 +13,8 @@ from django.shortcuts import render, redirect, reverse
 
 from .forms import NewMeterForm, ReadingForm
 from .models import Meter, Reading, Usage
+
+LOGGER = logging.getLogger('home_dashboard_log')
 
 
 # METER
@@ -24,6 +28,7 @@ def show_meters(request):
     :param request: the user http request
     :return: the html page with the meters as a http response
     """
+    LOGGER.debug('User requests show meter.')
     # Get the sort_key from the session
     sort_key = request.session.get('meterlist_sort_by', None)
     # Override with the sort_key that the user iq requesting.
@@ -60,10 +65,12 @@ def meter(request, meter_id=None):
     """
     Add or edit a meter.
     """
+    LOGGER.debug(f'User requests the meter page with a {request.method} method.')
     if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
         if request.user.has_perm('utilities.add_meter'):
             _add_new_meter_from_request(request)
         else:
+            LOGGER.warning('User does not have permission to add a new meter.')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Missing permission to add meter, please login',
@@ -74,6 +81,7 @@ def meter(request, meter_id=None):
         if request.user.has_perm('utilities.change_meter'):
             _change_meter_from_request(request)
         else:
+            LOGGER.info('User doesn\'t have permission to change the meter.')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Missing permission to edit meter, please login.',
@@ -91,7 +99,7 @@ def meter(request, meter_id=None):
             pass
         else:
             form = NewMeterForm(initial={'meter_name': meter_to_edit.meter_name,
-                                         'unit_name': meter_to_edit.meter_unit})
+                                         'meter_unit': meter_to_edit.meter_unit})
             edit = True
 
     return render(request,
@@ -106,6 +114,7 @@ def _add_new_meter_from_request(request):
     :param request: the user http request with the info on the new meter.
     :return: nothing
     """
+    LOGGER.debug('Calling _add_new_meter_from_request')
     form = NewMeterForm(request.POST)
     if form.is_valid():
         try:
@@ -113,19 +122,22 @@ def _add_new_meter_from_request(request):
                                              meter_unit=form.cleaned_data['meter_unit'])
             new_meter.save()
         except IntegrityError:
+            LOGGER.warning('Meter form is not valid, name already taken?')
             messages.add_message(request,
                                  messages.ERROR,
                                  'Meter name is already taken. Cannot add a double entry.',
                                  'alert-danger')
         else:
+            LOGGER.info(f'Added new meter: {new_meter.meter_name}')
             messages.add_message(request,
                                  messages.INFO,
                                  'Meter {0} is added.'.format(new_meter.meter_name),
                                  'alert-success')
     else:
+        LOGGER.warning('Could not save new meter; ' + list(form.errors.keys())[0])
         messages.add_message(request,
                              messages.ERROR,
-                             'Missing key element to add a new meter.',
+                             form.errors.get(list(form.errors.keys())[0])[0],
                              'alert-danger')
 
 
@@ -138,35 +150,43 @@ def _change_meter_from_request(request):
     :param request: the user http request with the relevant data
     :return: nothing
     """
+    LOGGER.debug("Calling _change_meter_from_request")
     form = NewMeterForm(request.POST)
     try:
         meter_to_change = Meter.objects.get(pk=form.data.get('id'))
     except (KeyError, Meter.DoesNotExist):
+        LOGGER.error(f'Something went really wrong with getting the old meter '
+                     f'(id = {form.data.get("id")}).')
         messages.add_message(request,
                              messages.ERROR,
                              'Something went wrong with getting the old meter.',
                              'alert-danger')
     else:
-        if form.is_valid():
-            try:
-                meter_to_change.meter_name = form.cleaned_data['meter_name']
-                meter_to_change.meter_unit = form.cleaned_data['unit_name']
-                meter_to_change.save()
-            except IntegrityError:
-                messages.add_message(request,
-                                     messages.ERROR,
-                                     'Meter name is already taken. Cannot add a double entry.',
-                                     'alert-danger')
-            else:
-                messages.add_message(request,
-                                     messages.INFO,
-                                     'Meter {0} is changed.'.format(meter_to_change.meter_name),
-                                     'alert-success')
-        else:
+        form.full_clean()
+        try:
+            meter_to_change.meter_name = form.cleaned_data['meter_name']
+            if Meter.objects.filter(meter_name=meter_to_change.meter_name).\
+                    exclude(pk=meter_to_change.id).count() != 0:
+                raise IntegrityError
+        except (IntegrityError, KeyError):
+            LOGGER.warning(f'Tried changing a meter name to an already existing one: '
+                           f'{meter_to_change}')
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Missing key element to change meter.',
+                                 'Meter name is already taken. Cannot add a double entry.',
                                  'alert-danger')
+        else:
+            try:
+                meter_to_change.meter_unit = form.cleaned_data['meter_unit']
+            except (KeyError, AttributeError):
+                pass
+
+            meter_to_change.save()
+            LOGGER.info(f'Meter {meter_to_change.meter_name} changed successfully.')
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Meter {0} is changed.'.format(meter_to_change.meter_name),
+                                 'alert-success')
 
 
 @permission_required('utilities.delete_meter')
@@ -174,9 +194,11 @@ def delete_meter(request):
     """
     Delete a meter
     """
+    LOGGER.debug('Calling delete_meter')
     try:
         meter_name = request.POST.get('meter_name')
     except KeyError:
+        LOGGER.warning('No meter name supplied to delete')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to delete meter.',
@@ -184,6 +206,7 @@ def delete_meter(request):
         return redirect(reverse('utilities:meter_list'))
 
     if meter_name is None:
+        LOGGER.warning('No meter name supplied to delete')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to delete meter.',
@@ -195,6 +218,7 @@ def delete_meter(request):
         # pylint: disable=unused-variable
         (deleted, deleted_meter) = Meter.objects.get(meter_name=meter_name).delete()
     except Meter.DoesNotExist:
+        LOGGER.warning(f'Trying to delete an already deleted meter: {meter_name}')
         messages.add_message(request,
                              messages.ERROR,
                              'Cannot delete already deleted meter.',
@@ -202,12 +226,14 @@ def delete_meter(request):
         return redirect(reverse('utilities:meter_list'))
 
     if deleted >= 1:
+        LOGGER.info(f'Deleted meter {meter_name}.')
         messages.add_message(request,
                              messages.INFO,
                              'Meter {0} is deleted'.format(meter_name),
                              'alert-success')
         return redirect(reverse('utilities:meter_list'))
 
+    LOGGER.warning(f'Trying to delete an already deleted meter: {meter_name}')
     messages.add_message(request,
                          messages.ERROR,
                          'Cannot delete already deleted meter.',
@@ -221,6 +247,7 @@ def list_readings(request):
     """
     Show all the readings.
     """
+    LOGGER.debug('Calling list_readings')
     try:
         readings = Reading.objects.all()
         if request.GET.get('m_id'):
@@ -274,6 +301,7 @@ def reading(request, reading_id=None):
                            when adding a new meter.
     :return: html page with the form to add/edit the reading
     """
+    LOGGER.debug('User call reading')
     if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
         return _process_new_reading(request)
 
@@ -292,6 +320,7 @@ def _process_show_reading_form(reading_id, request):
     :param request: the user http request
     :return: renderd html form to add/edit a reading
     """
+    LOGGER.debug('Calling _process_show_reading_form')
     form = ReadingForm()
     edit = False
     if reading_id:
@@ -302,6 +331,7 @@ def _process_show_reading_form(reading_id, request):
         else:
             form = ReadingForm(instance=reading_to_edit)
             edit = True
+    LOGGER.info(f'Edited reading to {reading_to_edit}')
     return render(request,
                   'utilities/reading_form.html',
                   {'form': form, 'edit': edit, 'r_id': reading_id})
@@ -314,9 +344,11 @@ def _process_edit_reading(request):
     :param request: the user http request
     :return: render the form page with the data of the specified reading
     """
+    LOGGER.debug('Calling _process_edit_reading')
     if request.user.has_perm('utilities.change_reading'):
         _change_reading_from_request(request)
     else:
+        LOGGER.warning(f'User {request.user} does not have permission to edit a reading.')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing permission to edit reading, please login.',
@@ -331,9 +363,11 @@ def _process_new_reading(request):
     :param request: the http request from the user
     :return: render the form page
     """
+    LOGGER.debug('Calling _process_new_reading')
     if request.user.has_perm('utilities.add_reading'):
         _add_new_reading_from_request(request)
     else:
+        LOGGER.warning(f'Missing permission to add reading.')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing permission to add a reading, please login',
@@ -346,9 +380,11 @@ def delete_reading(request):
     """
     Delete a meter reading.
     """
+    LOGGER.debug('Calling delete_reading')
     try:
         reading_id = int(request.POST.get('reading_id'))
     except KeyError:
+        LOGGER.warning('Missing key elements to delete reading.')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to delete reading.',
@@ -356,6 +392,7 @@ def delete_reading(request):
         return redirect(reverse('utilities:reading_list'))
 
     if reading_id is None:
+        LOGGER.warning('Missing key elements to delete reading.')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to delete reading.',
@@ -368,18 +405,21 @@ def delete_reading(request):
         reading_to_delete = Reading.objects.get(pk=reading_id)
         (deleted, deleted_reading) = reading_to_delete.delete()
     except Reading.DoesNotExist:
+        LOGGER.warning(f'Cannot delete already deleted reading: {reading_id}')
         messages.add_message(request,
                              messages.ERROR,
                              'Cannot delete already deleted reading.',
                              'alert-danger')
         return redirect(reverse('utilities:reading_list'))
     if deleted >= 1:
+        LOGGER.info(f'Reading {delete_reading} is deleted.')
         messages.add_message(request,
                              messages.INFO,
                              'Reading is deleted',
                              'alert-success')
         return redirect(reverse('utilities:reading_list'))
 
+    LOGGER.warning(f'Cannot delete already deleted reading: {reading_id}')
     messages.add_message(request,
                          messages.ERROR,
                          'Cannot delete already deleted reading.',
@@ -394,14 +434,17 @@ def _add_new_reading_from_request(request):
     :param request: the user http request with the info on the new meter.
     :return: nothing
     """
+    LOGGER.debug('Calling _add_new_reading_from_request')
     form = ReadingForm(request.POST)
     if form.is_valid():
         form.save()
+        LOGGER.info('New reading is saved')
         messages.add_message(request,
                              messages.INFO,
                              'Reading is added.',
                              'alert-success')
     else:
+        LOGGER.warning('Missing key element to add a new reading')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing key element to add a new reading.',
@@ -415,9 +458,11 @@ def _change_reading_from_request(request):
     :param request: the user http request with the relevant data
     :return: nothing
     """
+    LOGGER.debug('Calling _change_reading_from_request')
     try:
         reading_to_change = Reading.objects.get(pk=request.POST['id'])
     except (KeyError, Reading.DoesNotExist):
+        LOGGER.error('Could not get the old reading')
         messages.add_message(request,
                              messages.ERROR,
                              'Something went wrong with getting the old reading.',
@@ -425,6 +470,7 @@ def _change_reading_from_request(request):
     else:
         form = ReadingForm(request.POST, instance=reading_to_change)
         if form.is_valid():
+            LOGGER.info(f'Changes to reading {reading_to_change} are saved.')
             form.save()
         else:
             messages.add_message(request,
@@ -441,6 +487,7 @@ def list_usages(request):
 
     TODO: make selection of meter, data, ...
     """
+    LOGGER.debug('Calling list_usages')
     # Get the sort_key from the session
     sort_key = request.session.get('usagelist_sort_by')
     # Override with the sort_key that the user iq requesting.
