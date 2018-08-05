@@ -15,6 +15,7 @@ def index(request):
     """
     Generate the dashboard index-file.
     """
+    LOGGER.debug('User accesses dashboard index-page.')
     return profile(request)
 
 @login_required
@@ -22,11 +23,6 @@ def profile(request):
     """
     Show the user profile.
     """
-    LOGGER.error('running! from the dashboard view')
-    LOGGER.debug('debug message')
-    LOGGER.info('info message')
-    LOGGER.warning('warning message')
-    LOGGER.error('error message')
-    LOGGER.critical('oopsie')
+    LOGGER.debug('User accesses the profile page.')
     version = settings.VERSION
     return render(request, 'dashboard/profile.html', {'version': version})
