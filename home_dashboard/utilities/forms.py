@@ -3,18 +3,18 @@ Generate the forms for the utilities app.
 """
 from django import forms
 
-from .models import Reading
+from .models import Meter, Reading
 
-class NewMeterForm(forms.Form):
+class NewMeterForm(forms.ModelForm):
     """
     Form to create a new meter.
     """
-    meter_name = forms.CharField(max_length=30)
-    unit_name = forms.CharField(max_length=10)
-
-    #Add CSS-class to the form
-    meter_name.widget.attrs['class'] = 'form-control' # pylint: disable=no-member
-    unit_name.widget.attrs['class'] = 'form-control' # pylint: disable=no-member
+    class Meta:
+        model = Meter
+        fields = '__all__'
+        # Add CSS-class to the form
+        widgets = {'meter_name': forms.TextInput({'class': 'form-control'}),
+                   'unit_name': forms.TextInput({'class': 'form-control'})}
 
 
 class ReadingForm(forms.ModelForm):

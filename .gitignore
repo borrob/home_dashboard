@@ -52,6 +52,7 @@ coverage.xml
 
 # Django stuff:
 *.log
+*.log.*
 .static_storage/
 .media/
 local_settings.py
@@ -67,6 +68,7 @@ docs/_build/
 .venv
 env/
 env.bak/
+.idea
 
 #MAC OS
 .DS_Store

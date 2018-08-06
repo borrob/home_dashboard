@@ -2,17 +2,16 @@
 Testing of all the classes and endpoints for the utilities app.
 """
 import datetime
+from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.db import IntegrityError
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from .exceptions import MeterError
+from .logic import update_usage_after_new_reading, calculate_reading_on_date
 from .models import Meter, Reading, Usage
-from .models import calculate_reading_on_date
-from .models import update_usage_after_new_reading
 
-# Create your tests here.
 
 class MeterViewTests(TransactionTestCase):
     """
@@ -55,7 +54,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'test',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "please login")
@@ -63,13 +62,14 @@ class MeterViewTests(TransactionTestCase):
     def test_add_meter_with_permission(self):
         """
         Test if someone with permission can add a meter (should be yes).
+        Uses the form to add the meter.
         """
         p = Permission.objects.get(name='Can add meter')
         self.user.user_permissions.add(p)
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
@@ -84,17 +84,45 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No meters yet")
         self.assertContains(response, 'testmeter')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+        self.assertContains(response, 'Meter name already exists')
+
+    def test_add_incomplete_meter(self):
+        """
+        Test that all the fiels should be given to add a new meter.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_name': 'missing_meter_unit',
+                                         },
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'field is required')
+
+    def test_add_incomplete_meter_unit(self):
+        """
+        Test that all the fiels should be given to add a new meter.
+        """
+        p = Permission.objects.get(name='Can add meter')
+        self.user.user_permissions.add(p)
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.post(reverse('utilities:meter'),
+                                    data={'meter_unit': 'missing_meter_name',
+                                         },
+                                    follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'field is required')
 
     def test_remove_meter(self):
         """
@@ -105,7 +133,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'testmeter'},
@@ -124,7 +152,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'testmeter'},
@@ -144,7 +172,7 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:delete_meter'),
                                     data={'meter_name': 'NONEXISTING'},
@@ -163,11 +191,11 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 'm'},
+                                          'meter_unit': 'm'},
                                     follow=True)
         response = self.client.post(reverse('utilities:meter'),
                                     data={'meter_name': 'testmeter',
-                                          'unit_name': 's',
+                                          'meter_unit': 's',
                                           'new_name': 'thenewmeter',
                                           '_method': 'PUT'},
                                     follow=True)
@@ -185,11 +213,11 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         m_id = Meter.objects.get(meter_name='testmeter').id
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'unit_name': 's',
+                                    data={'meter_unit': 's',
                                           'meter_name': 'thenewmeter',
                                           '_method': 'PUT',
                                           'id': m_id},
@@ -209,22 +237,49 @@ class MeterViewTests(TransactionTestCase):
         self.client.login(username='testuser', password='q2w3E$R%')
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'testmeter',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         m_id = Meter.objects.get(meter_name='testmeter').id
         self.client.post(reverse('utilities:meter'),
                          data={'meter_name': 'nametaken',
-                               'unit_name': 'm'},
+                               'meter_unit': 'm'},
                          follow=True)
         response = self.client.post(reverse('utilities:meter'),
-                                    data={'unit_name': 's',
+                                    data={'meter_unit': 's',
                                           'meter_name': 'nametaken',
                                           '_method': 'PUT',
                                           'id': m_id},
                                     follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "testmeter")
-        self.assertContains(response, 'Meter name is already taken. Cannot add a double entry.')
+        self.assertContains(response, 'already taken')
+
+    def test_paging_of_meter(self):
+        """
+        Test there is paging on the meterview
+        """
+        # Create enough meter to fit on 1 page
+        for i in range(1, settings.PAGE_SIZE + 1):
+            m = Meter.objects.create(meter_name='m-{i}'.format(i=i), meter_unit='X')
+            m.save()
+
+        # all there meters should still fit on 1 page
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:meter_list'))
+        self.assertNotContains(response, 'pagination')
+
+        # add one more meter -> now there should be pagination
+        m = Meter.objects.create(meter_name='m-new-page', meter_unit='X')
+        m.save()
+
+        response = self.client.get(reverse('utilities:meter_list'))
+        self.assertContains(response, 'pagination')
+
+        # testing page2
+        url = reverse('utilities:meter_list') + '?page=2'
+        response = self.client.get(url)
+        self.assertContains(response, 'm-new-page')
+
 
 class ReadingViewTests(TestCase):
     """
@@ -442,6 +497,40 @@ class ReadingViewTests(TestCase):
         else:
             assert(False), 'Usage should have been deleted'
 
+    def test_paging_readings(self):
+        """
+        Test the paging of readings.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        # Create enough readings to fit on 1 page
+        for i in range(1, settings.PAGE_SIZE + 1):
+            reading = Reading(date=datetime.date(2018, 2, i),
+                              reading=10 * i,
+                              meter=meter)
+            reading.save()
+
+        # all there meters should still fit on 1 page
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:reading_list'))
+        self.assertNotContains(response, 'pagination')
+
+        # add one more reading -> now there should be pagination
+        reading = Reading(date=datetime.date(2018, 2, 20),
+                          reading=2000,
+                          meter=meter)
+        reading.save()
+
+        response = self.client.get(reverse('utilities:reading_list'))
+        self.assertContains(response, 'pagination')
+
+        # testing page2
+        url = reverse('utilities:reading_list') + '?page=2'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'page-item-2')
+
+
 class UsageTests(TestCase):
     """
     Test the usage.
@@ -539,3 +628,82 @@ class UsageTests(TestCase):
                                    follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "5")
+
+    def test_update_to_different_meter(self):
+        """
+        Test that changing the meter of a reading recalculates the usages of both the new and the
+        old meter.
+        """
+        meter1 = Meter(meter_name='testmeter1', meter_unit='m')
+        meter1.save()
+        reading1_meter1 = Reading(date=datetime.date(2018, 1, 1),
+                                  reading=0,
+                                  meter=meter1)
+        reading1_meter1.save()
+        reading2_meter1 = Reading(date=datetime.date(2018, 2, 1),
+                                  reading=10,
+                                  meter=meter1)
+        reading2_meter1.save()
+        usage1 = Usage.objects.get(meter=meter1)
+        self.assertTrue(usage1.usage == 10)
+
+        meter2 = Meter(meter_name='testmeter2', meter_unit='m')
+        meter2.save()
+        reading1_meter2 = Reading(date=datetime.date(2018, 1, 1),
+                                  reading=0,
+                                  meter=meter2)
+        reading1_meter2.save()
+        reading2_meter2 = Reading(date=datetime.date(2018, 2, 1),
+                                  reading=100,
+                                  meter=meter2)
+        reading2_meter2.save()
+        usage2 = Usage.objects.get(meter=meter2)
+        self.assertTrue(usage2.usage == 100)
+
+        reading3 = Reading(date=datetime.date(2018, 3, 1),
+                           reading=200,
+                           meter=meter1)
+
+        reading3.save()
+        usage3 = Usage.objects.filter(meter=meter1).order_by('-id')[0]
+        self.assertTrue(usage3.usage == 190)
+        reading3.meter = meter2
+        reading3.save()
+
+        usage4 = Usage.objects.filter(meter=meter1).order_by('-id')[0]
+        self.assertFalse(usage4.usage == 190)
+        usage5 = Usage.objects.filter(meter=meter2).order_by('-id')[0]
+        self.assertEqual(usage5.usage, 100.0)
+
+    def test_paging_usages(self):
+        """
+        Test the paging of usages.
+        """
+        meter = Meter(meter_name='testmeter', meter_unit='m')
+        meter.save()
+        # Create enough readings to fit on 1 page
+        for i in range(1, settings.PAGE_SIZE + 1):
+            reading = Reading(date=datetime.date(2018, i, 1),
+                              reading=10 * i,
+                              meter=meter)
+            reading.save()
+
+        # all there meters should still fit on 1 page
+        self.client.login(username='testuser', password='q2w3E$R%')
+        response = self.client.get(reverse('utilities:usage_list'))
+        self.assertNotContains(response, 'pagination')
+
+        # add one more reading -> now there should be pagination
+        reading = Reading(date=datetime.date(2019, 2, 20),
+                          reading=2000,
+                          meter=meter)
+        reading.save()
+
+        response = self.client.get(reverse('utilities:usage_list'))
+        self.assertContains(response, 'pagination')
+
+        # testing page2
+        url = reverse('utilities:usage_list') + '?page=2'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'page-item-2')

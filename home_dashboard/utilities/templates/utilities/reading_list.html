@@ -6,6 +6,15 @@
     <main role="main" class="container">
 
 		<div class="card">
+            {% if readings.has_other_pages %}
+                <div>
+                    <ul class="pagination">
+                        {% for p in readings.paginator.page_range %}
+                            <li class="page-item" id="page-item-{{ p }}"><a href="?page={{ p }}" class="page-link">{{ p }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
             <div class="row">
                 <div class="col">
                     <div class="btn-group" role="group">
@@ -17,31 +26,31 @@
                 </div>
             </div>
 			<table class="table table-hover">
-				<thead>
-                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=id">#</a></th>
-                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=date">Date</a></th>
-					<th><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_name">Meter name</a></th>
-                    <th><a href="{% url 'utilities:reading_list' %}?sort_by=reading">Reading</a></th>
-					<th><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_unit">Unit</a></th>
-                    <th></th>
-				</thead>
+				<thead><tr>
+                    <td><a href="{% url 'utilities:reading_list' %}?sort_by=id" id="head-id" class="table-head">#</a></td>
+                    <td><a href="{% url 'utilities:reading_list' %}?sort_by=date" id="head-date" class="table-head">Date</a></td>
+					<td><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_name" id="head-meter_name" class="table-head">Meter name</a></td>
+                    <td><a href="{% url 'utilities:reading_list' %}?sort_by=reading" id="head-reading" class="table-head">Reading</a></td>
+					<td><a href="{% url 'utilities:reading_list' %}?sort_by=meter__meter_unit" id="head-meter_unit" class="table-head">Unit</a></td>
+                    <td></td>
+                </tr></thead>
 				<tbody>
 					{% for r in readings %}
-          <tr>
-					    <td>{{ r.pk }}.</td>
-                        <td>{{ r.date }}</td>
-					    <td>{{ r.meter.meter_name }}</td>
-                        <td>{{ r.reading }}</td>
-					    <td>{{ r.meter.meter_unit }}</td>
-                        <td>
-                            {% if perms.utilities.delete_reading %}
-                              <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"</a>
-                            {% endif %}
-                            {% if perms.utilities.change_reading %}
-                              <a onclick="edit_reading({{ r.pk }}, {{r.meter_id}}, '{{r.date | date:"Y-m-d"}}', {{r.reading}}, '{{r.remark}}')"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"</a>
-                            {% endif %}
-                        </td>
-          </tr>
+                        <tr>
+                            <td>{{ r.pk }}.</td>
+                            <td>{{ r.date | date:'d-m-Y' }}</td>
+                            <td>{{ r.meter.meter_name }}</td>
+                            <td>{{ r.reading }}</td>
+                            <td>{{ r.meter.meter_unit }}</td>
+                            <td>
+                                {% if perms.utilities.delete_reading %}
+                                  <a onclick="deletereading({{ r.pk }})"><img src="{% static 'open-iconic-master/svg/trash.svg' %}" style="width:1em"/></a>
+                                {% endif %}
+                                {% if perms.utilities.change_reading %}
+                                    <a href="{% url 'utilities:reading' r.pk %}"><img src="{% static 'open-iconic-master/svg/wrench.svg' %}" style="width:1em"/></a>
+                                {% endif %}
+                            </td>
+                        </tr>
 					{% empty %}
                     <tr>
 					    <td colspan=4>No readings yet</td>
@@ -51,9 +60,11 @@
 			</table>
 		</div>
 
-        {% include 'utilities/snippets/add_reading_model.html' %}
+        {% if perms.utilities.add_reading %}
+            <button onclick="window.location.href='{% url 'utilities:reading' %}'" class="btn btn-primary">Add new Reading</button>
+		{% endif %}
+
         {% include 'utilities/snippets/delete_reading_modal.html' %}
-        {% include 'utilities/snippets/edit_reading_modal.html' %}
 
     </main>
 
@@ -64,8 +75,14 @@
             {% if request.GET.m_id %}
                 var active_meter = {{ request.GET.m_id }};
                 $('#meter_' + active_meter ).removeClass('btn-secondary').addClass('btn-primary');
+                $('.table-head').each((i) => {
+                    $('.table-head')[i].href += '&m_id=' + active_meter;
+                });
             {% else %}
                 $('#meter_all').removeClass('btn-secondary').addClass('btn-primary');
             {% endif %}
+        </script>
+        <script>
+            $( () => $('#page-item-{{ current_page }}').addClass('active'));
         </script>
 {% endblock %}
