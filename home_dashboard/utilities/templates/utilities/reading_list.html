@@ -61,7 +61,7 @@
 		</div>
 
         {% if perms.utilities.add_reading %}
-            <a href="{% url 'utilities:reading' %} " type="button" class="btn btn-primary">Add new Reading</a>
+            <button onclick="window.location.href='{% url 'utilities:reading' %}'" class="btn btn-primary">Add new Reading</button>
 		{% endif %}
 
         {% include 'utilities/snippets/delete_reading_modal.html' %}

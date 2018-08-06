@@ -329,9 +329,12 @@ def _process_show_reading_form(reading_id, request):
         except Reading.DoesNotExist:
             pass
         else:
+            LOGGER.info(f'Going to edit reading {reading_to_edit}')
             form = ReadingForm(instance=reading_to_edit)
             edit = True
-    LOGGER.info(f'Edited reading to {reading_to_edit}')
+    else:
+        LOGGER.info('Going to create a new reading.')
+
     return render(request,
                   'utilities/reading_form.html',
                   {'form': form, 'edit': edit, 'r_id': reading_id})
