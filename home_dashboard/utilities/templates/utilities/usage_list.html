@@ -27,11 +27,11 @@
             </div>
 			<table class="table table-hover">
 				<thead>
-                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=date">Year</a></th>
-                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=date">Month</a></th>
-					<th><a href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_name">Meter name</a></th>
-                    <th><a href="{% url 'utilities:usage_list' %}?sort_by=usage">Usage</a></th>
-					<th><a href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_unit">Unit</a></th>
+                    <th><a class="table-head" href="{% url 'utilities:usage_list' %}?sort_by=date">Year</a></th>
+                    <th><a class="table-head" href="{% url 'utilities:usage_list' %}?sort_by=date">Month</a></th>
+					<th><a class="table-head" href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_name">Meter name</a></th>
+                    <th><a class="table-head" href="{% url 'utilities:usage_list' %}?sort_by=usage">Usage</a></th>
+					<th><a class="table-head" href="{% url 'utilities:usage_list' %}?sort_by=meter__meter_unit">Unit</a></th>
 				</thead>
 				<tbody>
 					{% for r in usages %}
@@ -60,6 +60,9 @@
             {% if request.GET.m_id %}
                 var active_meter = {{ request.GET.m_id }};
                 $('#meter_' + active_meter ).removeClass('btn-secondary').addClass('btn-primary');
+                $('.table-head').each((i) => {
+                    $('.table-head')[i].href += '&m_id=' + active_meter;
+                });
             {% else %}
                 $('#meter_all').removeClass('btn-secondary').addClass('btn-primary');
             {% endif %}

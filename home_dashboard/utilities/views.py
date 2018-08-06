@@ -251,7 +251,7 @@ def list_readings(request):
     try:
         readings = Reading.objects.all()
         if request.GET.get('m_id'):
-            readings = readings.filter(meter_id=request.GET.get('m_id'))
+            readings = readings.filter(meter__pk=request.GET.get('m_id'))
     except Reading.DoesNotExist:
         readings = []
 
