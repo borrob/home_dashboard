@@ -14,7 +14,7 @@ def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
     """
     A new reading is inserted, so try and calculate the new montly usage.
     """
-    LOGGER.debug(f'Going to update the useage with reading: {reading}.')
+    LOGGER.debug('Going to update the useage with reading: {r}.'.format(r=reading))
     last_reading_before = get_readings_before_or_after(reading.date, reading.meter, 'before')
     last_reading_before = last_reading_before if last_reading_before else reading
     first_reading_after = get_readings_before_or_after(reading.date, reading.meter, 'after')
@@ -59,8 +59,8 @@ def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
                                     filter(date__gte=month_date_31).\
                                     order_by('date')[0]
                 except IndexError:
-                    LOGGER.warning(f'Could not calculate the usage for meter {reading.meter}, '
-                                   f'{year}-{month}')
+                    LOGGER.warning('Could not calculate the usage for meter {rm} , ' \
+                                   '{y}-{m}'.format(rm=reading.meter, y=year, m=month))
                 else:
                     first_of_month = calculate_reading_on_date(month_date_1, r_before1, r_after1)
                     last_of_month = calculate_reading_on_date(month_date_31, r_before31, r_after31)
@@ -71,7 +71,7 @@ def update_usage_after_new_reading(reading): #pylint: disable=too-many-locals
                                                  year=year,
                                                  usage=use)
                     usage.save()
-                    LOGGER.debug(f'Caculated new useage: {usage}')
+                    LOGGER.debug('Caculated new useage: {u}'.format(u=usage))
 
 
 def get_readings_before_or_after(the_date, meter, before_after):
@@ -108,8 +108,8 @@ def calculate_reading_on_date(the_date, reading_1, reading_2):
 
     Raises errors when something is not good.
     """
-    LOGGER.debug(f'Calling calculate_reading_on_date for {the_date} with {reading_1} and '
-                 f'{reading_2}')
+    LOGGER.debug('Calling calculate_reading_on_date for {d} with {r1} and ' \
+                 '{r2}'.format(d=the_date, r1=reading_1, r2=reading_2))
     if reading_1.meter != reading_2.meter:
         raise MeterError('Meters are not equal, cannot calculate usegage.')
     if reading_1.date == reading_2.date:
