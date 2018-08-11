@@ -65,7 +65,7 @@ def meter(request, meter_id=None):
     """
     Add or edit a meter.
     """
-    LOGGER.debug(f'User requests the meter page with a {request.method} method.')
+    LOGGER.debug('User requests the meter page with a %s method.', request.method)
     if request.method == 'POST' and not request.POST.get('_method', 'not_put') == 'PUT':
         if request.user.has_perm('utilities.add_meter'):
             _add_new_meter_from_request(request)
@@ -128,13 +128,13 @@ def _add_new_meter_from_request(request):
                                  'Meter name is already taken. Cannot add a double entry.',
                                  'alert-danger')
         else:
-            LOGGER.info(f'Added new meter: {new_meter.meter_name}')
+            LOGGER.info('Added new meter: %s.', new_meter.meter_name)
             messages.add_message(request,
                                  messages.INFO,
                                  'Meter {0} is added.'.format(new_meter.meter_name),
                                  'alert-success')
     else:
-        LOGGER.warning(f'Could not save new meter {list(form.errors.keys())[0]}.')
+        LOGGER.warning('Could not save new meter %s.', list(form.errors.keys())[0])
         messages.add_message(request,
                              messages.ERROR,
                              form.errors.get(list(form.errors.keys())[0])[0],
@@ -155,8 +155,8 @@ def _change_meter_from_request(request):
     try:
         meter_to_change = Meter.objects.get(pk=form.data.get('id'))
     except (KeyError, Meter.DoesNotExist):
-        LOGGER.error(f'Something went really wrong with getting the old meter '
-                     f'(id = {form.data.get("id")}).')
+        LOGGER.error('Something went really wrong with getting the old meter ' \
+                     '(id = %s).', form.data.get("id"))
         messages.add_message(request,
                              messages.ERROR,
                              'Something went wrong with getting the old meter.',
@@ -169,8 +169,8 @@ def _change_meter_from_request(request):
                     exclude(pk=meter_to_change.id).count() != 0:
                 raise IntegrityError
         except (IntegrityError, KeyError):
-            LOGGER.warning(f'Tried changing a meter name to an already existing one: '
-                           f'{meter_to_change}')
+            LOGGER.warning('Tried changing a meter name to an already existing one: ' \
+                           '%s', meter_to_change)
             messages.add_message(request,
                                  messages.ERROR,
                                  'Meter name is already taken. Cannot add a double entry.',
@@ -182,7 +182,7 @@ def _change_meter_from_request(request):
                 pass
 
             meter_to_change.save()
-            LOGGER.info(f'Meter {meter_to_change.meter_name} changed successfully.')
+            LOGGER.info('Meter %s changed successfully.', meter_to_change.meter_name)
             messages.add_message(request,
                                  messages.ERROR,
                                  'Meter {0} is changed.'.format(meter_to_change.meter_name),
@@ -218,7 +218,7 @@ def delete_meter(request):
         # pylint: disable=unused-variable
         (deleted, deleted_meter) = Meter.objects.get(meter_name=meter_name).delete()
     except Meter.DoesNotExist:
-        LOGGER.warning(f'Trying to delete an already deleted meter: {meter_name}')
+        LOGGER.warning('Trying to delete an already deleted meter: %s', meter_name)
         messages.add_message(request,
                              messages.ERROR,
                              'Cannot delete already deleted meter.',
@@ -226,14 +226,14 @@ def delete_meter(request):
         return redirect(reverse('utilities:meter_list'))
 
     if deleted >= 1:
-        LOGGER.info(f'Deleted meter {meter_name}.')
+        LOGGER.info('Deleted meter %s.', meter_name)
         messages.add_message(request,
                              messages.INFO,
                              'Meter {0} is deleted'.format(meter_name),
                              'alert-success')
         return redirect(reverse('utilities:meter_list'))
 
-    LOGGER.warning(f'Trying to delete an already deleted meter: {meter_name}')
+    LOGGER.warning('Trying to delete an already deleted meter: %s', meter_name)
     messages.add_message(request,
                          messages.ERROR,
                          'Cannot delete already deleted meter.',
@@ -329,7 +329,7 @@ def _process_show_reading_form(reading_id, request):
         except Reading.DoesNotExist:
             pass
         else:
-            LOGGER.info(f'Going to edit reading {reading_to_edit}')
+            LOGGER.info('Going to edit reading %s', reading_to_edit)
             form = ReadingForm(instance=reading_to_edit)
             edit = True
     else:
@@ -351,7 +351,7 @@ def _process_edit_reading(request):
     if request.user.has_perm('utilities.change_reading'):
         _change_reading_from_request(request)
     else:
-        LOGGER.warning(f'User {request.user} does not have permission to edit a reading.')
+        LOGGER.warning('User %s does not have permission to edit a reading.', request.user)
         messages.add_message(request,
                              messages.ERROR,
                              'Missing permission to edit reading, please login.',
@@ -370,7 +370,7 @@ def _process_new_reading(request):
     if request.user.has_perm('utilities.add_reading'):
         _add_new_reading_from_request(request)
     else:
-        LOGGER.warning(f'Missing permission to add reading.')
+        LOGGER.warning('Missing permission to add reading.')
         messages.add_message(request,
                              messages.ERROR,
                              'Missing permission to add a reading, please login',
@@ -408,21 +408,21 @@ def delete_reading(request):
         reading_to_delete = Reading.objects.get(pk=reading_id)
         (deleted, deleted_reading) = reading_to_delete.delete()
     except Reading.DoesNotExist:
-        LOGGER.warning(f'Cannot delete already deleted reading: {reading_id}')
+        LOGGER.warning('Cannot delete already deleted reading: %a', reading_id)
         messages.add_message(request,
                              messages.ERROR,
                              'Cannot delete already deleted reading.',
                              'alert-danger')
         return redirect(reverse('utilities:reading_list'))
     if deleted >= 1:
-        LOGGER.info(f'Reading {delete_reading} is deleted.')
+        LOGGER.info('Reading %s is deleted.', delete_reading)
         messages.add_message(request,
                              messages.INFO,
                              'Reading is deleted',
                              'alert-success')
         return redirect(reverse('utilities:reading_list'))
 
-    LOGGER.warning(f'Cannot delete already deleted reading: {reading_id}')
+    LOGGER.warning('Cannot delete already deleted reading: %a', reading_id)
     messages.add_message(request,
                          messages.ERROR,
                          'Cannot delete already deleted reading.',
@@ -473,7 +473,7 @@ def _change_reading_from_request(request):
     else:
         form = ReadingForm(request.POST, instance=reading_to_change)
         if form.is_valid():
-            LOGGER.info(f'Changes to reading {reading_to_change} are saved.')
+            LOGGER.info('Changes to reading %a are saved.', reading_to_change)
             form.save()
         else:
             messages.add_message(request,
