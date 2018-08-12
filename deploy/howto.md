@@ -8,6 +8,7 @@ Here are some suggestions on how to deploy the app.
 2. Create a (system) user without home folder specific for this website.
 3. Create a directory to run the application from (eg. ``/srv/www/home_dashboard``)
 4. create a python3 virtual environment in this directory
+4. Install uwsgi via `pip install uswsgi`
 5. Install NGINX
 6. Create (or obtain) as SSL certificate and install it with NGINX.
 
@@ -26,8 +27,9 @@ Here are some suggestions on how to deploy the app.
 ## Deploy
 
 1. Backup your environment files like ``settings.py`` and any database files.
-2. Copy the new deploy: ``rsync -avr SOURCE DEST --delete-after
+2. Copy the new deploy: ``rsync -avr SOURCE DEST --delete-after (but carefull: don't delete the static or virtual env)
 3. Move the environment files back to their location
+4. Run ``pip install -r requirements``
 4. Check file permissions
 5. Run a ``./manage.py migrate``
 6. Run a ``./manage.py check --deploy`` and fix any issues
