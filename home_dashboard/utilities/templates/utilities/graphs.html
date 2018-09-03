@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block main %}
+
+    <main role="main" class="container">
+
+		<div class="card">
+            <h2>Graphs</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'utilities:reading_list' %}" class="btn btn-secondary" id="meter_all">All</a>
+                        {% for m in meters %}
+                            <a href="{% url 'utilities:reading_list' %}?m_id={{ m.id }}" class="btn btn-secondary" id="meter_{{m.id}}">{{ m.meter_name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <canvas id="myChart" width="400px;" height="400px;"></canvas>
+		</div>
+
+    </main>
+
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+        <script>
+
+$.ready(init());
+
+function init() {
+    get_data_for_year(2018).done(r => {show_graph(r)})
+}
+
+function show_graph(dat) {
+    var ctx = document.getElementById("myChart");
+    ctx.height = 200;
+    var options = {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        }
+    };
+
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            datasets: [dat]
+        },
+        options: options
+    });
+}
+
+function get_data_for_year(y) {
+    var req = $.ajax({
+        methode: "GET",
+        url: "/api/v1/monthly_usage/?meter=1&year="+y
+        });
+   return req;
+}
+        </script>
+{% endblock %}

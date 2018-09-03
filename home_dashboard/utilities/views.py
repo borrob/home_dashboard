@@ -535,3 +535,13 @@ def list_usages(request):
                   {'usages': page,
                    'current_page': page_id,
                    'meters': meters})
+
+@login_required
+def graphs(request):
+    """
+    Generate the graphs page for utilities.
+
+    :param request: the user http request
+    :return: the generate html page to draw graphs
+    """
+    return render(request, 'utilities/graphs.html')
