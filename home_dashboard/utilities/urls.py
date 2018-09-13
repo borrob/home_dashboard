@@ -16,5 +16,6 @@ urlpatterns = [
     path('reading', views.reading, name='reading'),
     path('reading/<int:reading_id>/', views.reading, name='reading'),
     path('deletereading', views.delete_reading, name='delete_reading'),
-    path('usagelist', views.list_usages, name='usage_list')
+    path('usagelist', views.list_usages, name='usage_list'),
+    path('graphs', views.graphs, name='graphs')
 ]
