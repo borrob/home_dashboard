@@ -24,63 +24,63 @@
 {% endblock %}
 
 {% block script %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
-        <script>
+  <script src="{% static 'chart/chart.bundle.min.js' %}"></script>
+  <script>
 
-$.ready(init());
+  $.ready(init());
 
-function init() {
-    var m_id = {{ meters.0.id }};
-    $('#meter_' + m_id).removeClass('btn-secondary').addClass('btn-primary');
-    show_for_meter(m_id);
-}
+  function init() {
+      var m_id = {{ meters.0.id }};
+      $("#meter_" + m_id).removeClass("btn-secondary").addClass("btn-primary");
+      show_for_meter(m_id);
+  }
 
-function show_for_meter(m_id){
-    $('.meterbutton').removeClass('btn-primary').addClass('btn-secondary')
-    $('#meter_' + m_id).removeClass('btn-secondary').addClass('btn-primary');
-    var year = (new Date()).getFullYear();
-    var dat1 = get_data(year, m_id);
-    var dat2 = get_data(year-1, m_id);
-    var dat3 = get_data(year-2, m_id);
+  function show_for_meter(m_id){
+      $(".meterbutton").removeClass("btn-primary").addClass("btn-secondary")
+      $("#meter_" + m_id).removeClass("btn-secondary").addClass("btn-primary");
+      var year = (new Date()).getFullYear();
+      var dat1 = get_data(year, m_id);
+      var dat2 = get_data(year-1, m_id);
+      var dat3 = get_data(year-2, m_id);
 
-    Promise.all([dat1, dat2, dat3]).then(r => {show_graph(r)})
-}
+      Promise.all([dat1, dat2, dat3]).then(r => {show_graph(r)})
+  }
 
-function show_graph(dat) {
-    dat[0].backgroundColor ='rgba(200,0,0,0.2)';
-    dat[1].backgroundColor ='rgba(200,200,0,0.3)';
-    dat[2].backgroundColor ='rgba(100,0,200,0.5)';
-    dat[0].pointRadius = 5;
-    dat[1].pointRadius = 5;
-    dat[2].pointRadius = 5;
-    var ctx = document.getElementById("myChart");
-    var options = {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero:true
-                }
-            }]
-        }
-    };
+  function show_graph(dat) {
+      dat[0].backgroundColor ="rgba(200,0,0,0.2)";
+      dat[1].backgroundColor ="rgba(200,200,0,0.3)";
+      dat[2].backgroundColor ="rgba(100,0,200,0.5)";
+      dat[0].pointRadius = 5;
+      dat[1].pointRadius = 5;
+      dat[2].pointRadius = 5;
+      var ctx = document.getElementById("myChart");
+      var options = {
+          scales: {
+              yAxes: [{
+                  ticks: {
+                      beginAtZero:true
+                  }
+              }]
+          }
+      };
 
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            datasets: dat
-        },
-        options: options
-    });
-}
+      var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+              datasets: dat
+          },
+          options: options
+      });
+  }
 
-function get_data(y, m) {
-    var req = $.ajax({
-        methode: "GET",
-        url: "/api/v1/monthly_usage/?meter=" + m + "&year="+y
-        });
-   return req;
-}
+  function get_data(y, m) {
+      var req = $.ajax({
+          methode: "GET",
+          url: "/api/v1/monthly_usage/?meter=" + m + "&year="+y
+          });
+     return req;
+  }
 
-        </script>
+  </script>
 {% endblock %}
