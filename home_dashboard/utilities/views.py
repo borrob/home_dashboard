@@ -544,4 +544,5 @@ def graphs(request):
     :param request: the user http request
     :return: the generate html page to draw graphs
     """
-    return render(request, 'utilities/graphs.html')
+    meters = Meter.objects.all()
+    return render(request, 'utilities/graphs.html', {'meters': meters})
