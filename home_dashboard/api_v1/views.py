@@ -49,6 +49,12 @@ class UsageViewSet(viewsets.ReadOnlyModelViewSet): # pylint: disable=too-many-an
 
 @login_required
 def monthly_usage(request):
+    """
+    Get a json with meter usages for the entire year for a specific meter.
+
+    :param request: the http request
+    :return: json with the usages
+    """
     year = int(request.GET.get('year', -1))
     meter = int(request.GET.get('meter', -1))
     usages = Usage.objects.filter(meter__id=meter).filter(year=year)
