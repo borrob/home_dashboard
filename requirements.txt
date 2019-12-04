@@ -1,7 +1,7 @@
 astroid==2.3.1
 coverage==5.0a8
 defusedxml==0.6.0
-Django==2.2.6
+Django==2.2.8
 django-filter==2.2.0
 djangorestframework==3.10.3
 djangorestframework-xml==1.4.0
