@@ -152,7 +152,7 @@ LOGIN_REDIRECT_URL = '/dashboard'
 
 ##PROJECT SPECIFIC
 PAGE_SIZE = 10
-VERSION = '0.6-1-geaaae96'
+VERSION = '0.6-5-g533f835'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
